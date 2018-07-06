@@ -74,9 +74,24 @@ class PoppinsApp {
 }
 
 class PoppinsComp{
+	
+	/**
+	PARAMS:
+		e 		: root element. Connect by ID in html
+		html	: html template
+		data	: json object data - descripted by models
+		service	: API url list
+				[
+					{url: '', method: '', type: 'GET/SET', databind: obj}
+				]
+		
+		
+		
+	*/
+	
  
 	/**
-		
+		Constructor
 		(string: selector)
 		(json: behavior)
 		(string: app, string: selector)
