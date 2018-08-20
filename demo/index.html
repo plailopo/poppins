@@ -13,27 +13,44 @@
     <meta name="description" content="Poppins" />
     <meta name="keywords" content="Poppins" />
 
-    <script src="../src/poppins-application.js" type="text/javascript"></script>
+	<script src="../dist/poppins.js" type="text/javascript"></script>
 	<script src="app.js" type="text/javascript"></script>
-
 
   </head>
 
   <body>
 	
 	<div class="demobox" id="P-PrintName">
-		<h2>Print your name</h2>
+		<h2>Type your name</h2>
+		With method binder<br />
 		<input type="text" name="yourname">
-		<button type="button">Go</button><br />
-		Hello <span>{ yourname }</span>!
+		<button type="button" p-bind="click#changeName">Go</button><br />
+		Hello <span p-data="yourname"></span>!
 	</div>
 	
-	<div class="demobox" id="P-TodoList">
+	<div class="demobox" p-component="PrintName2">
+		<h2>Type your name</h2>
+		With auto binder<br />
+		<input type="text" p-bind="keyup#yourname"><br />
+		Hello <span p-data-bind="yourname"></span>!<br />
+		<span p-data-bind="yourname"></span>, do you like to buy an hamburger? Yes, you, <span p-data-bind="yourname"></span>
+	</div>
+	
+	<div class="demobox" p-component="TodoList1">
 		<h2>Todo list</h2>
 		<input type="text" name="task">
-		<button type="button">Go</button><br />
-		<ul p-loop="{tasks}">
-			<li p-template="">{task_name}</li>
+		<button type="button" p-bind="click#newTask">Go</button><br />
+		<ul p-data-bind="tasks">
+			<li p-data="name"></li>
+		</ul>
+	</div>
+	
+	<div class="demobox" id="P-TodoList2">
+		<h2>Todo list</h2>
+		<input type="text" name="task">
+		<button type="button" p-bind="click#newTask">Go</button><br />
+		<ul>
+			<li></li>
 		</ul>
 	</div>
 

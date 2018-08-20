@@ -1,7 +1,7 @@
 
 var StartPoppins = function() {
     Intf.init();
-    Caller.init()
+    Caller.init();
 };
 
 
@@ -15,9 +15,9 @@ var Caller = {
     jwtPayload : {},
 
     init: function(){
-        if(typeof window.localStorage['TKN'] == 'string'){
-            var pos = window.localStorage['TKN'].indexOf('.') + 1;
-            Caller.jwtPayload = JSON.parse(atob(window.localStorage['TKN'].substring(pos, window.localStorage['TKN'].indexOf('.', pos))));
+        if(typeof window.localStorage.TKN == 'string'){
+            var pos = window.localStorage.TKN.indexOf('.') + 1;
+            Caller.jwtPayload = JSON.parse(atob(window.localStorage.TKN.substring(pos, window.localStorage.TKN.indexOf('.', pos))));
         }
     },
     /**
@@ -42,9 +42,9 @@ var Caller = {
             data = dt;
         }
 
-        data.TKN = window.localStorage['TKN'];
+        data.TKN = window.localStorage.TKN;
 
-        for(i in Caller.params){
+        for(var i in Caller.params){
             data[Caller.params[i].key] = Caller.params[i].value;
         }
 
@@ -64,9 +64,9 @@ var Caller = {
                     var jwt = r.TKN;
                     
                     if(typeof jwt == 'string'){
-                        window.localStorage['TKN'] = jwt;
-                        var pos = window.localStorage['TKN'].indexOf('.') + 1;
-                        Caller.jwtPayload = JSON.parse(atob(window.localStorage['TKN'].substring(pos, window.localStorage['TKN'].indexOf('.', pos))));
+                        window.localStorage.TKN = jwt;
+                        var pos = window.localStorage.TKN.indexOf('.') + 1;
+                        Caller.jwtPayload = JSON.parse(atob(window.localStorage.TKN.substring(pos, window.localStorage.TKN.indexOf('.', pos))));
                     }
                     
                     if(typeof Caller.afterReq === 'function'){
@@ -91,7 +91,7 @@ var Caller = {
             }
          }).catch(error => {
             Message.showNotify({text: 'Server error! Re-try', leve: 0, title: 'Warning'});
-         })
+         });
 
     },
 
