@@ -21,11 +21,13 @@ Element.prototype.hasClass = function(c) {
 Element.prototype.remove = function() {
     this.parentElement.removeChild(this);
     return this;
-}
+};
 
 Element.prototype.val = function(v) {
     var form = this.closest('form');
-    
+    var i = 0;
+	
+	
     if(this.tagName.toLowerCase() == 'input'){
 
         if(this.getAttribute('type').toLowerCase() == 'checkbox'){
@@ -36,17 +38,19 @@ Element.prototype.val = function(v) {
             
             var radioList = form.querySelectorAll('input[type=radio][name='+this.name+']');
             
-            for(var i=0; i<radioList.length; i++){
+            for(i=0; i<radioList.length; i++){
                 
+				var chg = null;
+				
                 if(radioList[i].checked && v==null){
                     return radioList[i].value;
                 }else if(radioList[i].value == v && !radioList[i].checked){
                     radioList[i].checked = true;
-                    var chg = new Event("change");
+                    chg = new Event("change");
                     radioList[i].dispatchEvent(chg);
                 }else if(radioList[i].value != v && radioList[i].checked){
                     radioList[i].checked = false;
-                    var chg = new Event("change");
+                    chg = new Event("change");
                     radioList[i].dispatchEvent(chg);
                 }
             }
@@ -57,7 +61,7 @@ Element.prototype.val = function(v) {
     }else if(this.tagName.toLowerCase() == 'select'){
         if(v==null) return this.value;
         var opts = this.querySelectorAll('option');
-        for(var i=0; i<opts.length; i++){
+        for( i=0; i<opts.length; i++){
             opts[i].selected = false;
             if(opts[i].value == v){
                 opts[i].selected = true;
@@ -80,7 +84,7 @@ Element.prototype.closest = function(selector) {
             return true;
         }
         return false;
-    })
+    });
 
     var parent;
 
@@ -95,7 +99,7 @@ Element.prototype.closest = function(selector) {
     }
 
     return null;
-}
+};
 
 Element.prototype.data = function(n, v) {
     if(v == null){
@@ -111,7 +115,7 @@ Element.prototype.data = function(n, v) {
         this.dataset = v;
     }
     return this;
-}
+};
 
 /****** STRING UTILS ********/
 String.prototype.trim=function(){return this.replace(/^\s+|\s+$/g, '');};

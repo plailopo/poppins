@@ -1,47 +1,64 @@
-# poppins
-Funny coding
+# Poppins
+Funny JS
 
 
 
-# Rules
+# Few rules
 
- - Every Component goes into default app, if not specified
+ - A Poppin is a big or small DOM piece
+ - A Poppin can to contain more other Poppins, so it can be contained by another.
+ - A Poppin has a behaviors by JS with data and method
+ - In a Poppin is possible bind a tag to a data or viceversa
 
+# Javascript side
+
+new Poppin('HelloWorld', {
+	
+	template 	: HTML String,
+	dom_link	: Root Dom Element
+	
+	// Method
+	place(DOM element, data)	: place rendered HTML poppin on DOM. If dom element is place on top of app (remove all others)
+								  if data is an array, place N of it
+	
+
+	// custom data
+	firstname : 'Gigi',
+	lastname  : 'Smith',
+	  ...
+	
+	// custom methods
+	doSomething: function(...){
+		...
+	},
+	
+});
+
+new PoppinLink(poppin, dom element, data){
+}
+ 
 # HTML attributes
 
- - p-comp="name"
-		Define a component by html
+ - app='name'
+	Define a App area. Poppins work only inside it
+	
+ - pop="name"
+	Define a poppin place, by name
+	
+	
  - p-bind="event#method/variable"
 		Make a binder for the element. When event fire
 		- if exist method in Behavior, run it
 		- else set the veriable... if not exist create it
+
  - p-data="data variable"
 		Print data variable on html content
- - p-data-bind="data variable"
-		Print data variable on html content and catch
- - p-loop="list#item_name"
-		Loop content with "list" array name into "item_name" element
+ - p-data-once="data variable"
+		Print data variable on html content
 
-	
-	
-	var data = {
-	get user(){
-  	return this._value;
-  },
-  set user(v){
-  	this._value = this._value + v
-  }
-}
+# NON HTML entries
 
-console.log(data.user)
-data.user = 'as'
-console.log(data.user)
-console.log(data.__lookupSetter__('user'))
-data.user = 'uu'
-console.log(data.user)
-data.__defineSetter__('user', function(v){
-	this._value = this._value + " - " + v
-})
-console.log(data.__lookupSetter__('user'))
-data.user.setValue('aa')
-console.log(data.user)
+ - {{param}}
+	resolve this entry with the data value associated and bind with it. When data param change, the entry also change
+ - {{once:param}}
+	resolve this entry with the data value associated , one time.. it not bind

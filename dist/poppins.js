@@ -1,4 +1,209 @@
 
+
+class PopApp{
+	
+    constructor(name, onLoad){
+		
+		this.name = name;
+		this.onLoad = onLoad;
+		this.poppins = [];
+		
+		Poppins.apps.push(this);
+
+	}
+	
+	load(){
+		var oldTag = document.querySelector('app#'+this.name);
+		this.e = document.createElement('div');
+		this.e.innerHTML = oldTag.innerHTML;
+		oldTag.parentNode.replaceChild(this.e, oldTag);
+		
+		for( i in this.onLoad ){
+			this.loadPop(this.onLoad[i]);
+		}
+	}
+	
+	loadPop(name){
+		this.getPoppin(name).render();
+	}
+	
+	addPoppin(pop){
+		this.poppins.push(pop);
+	}
+	
+	getPoppin(name){
+		for(i in this.poppins){
+			if(this.poppins[i].name == name)
+				return this.poppins[i];
+		}
+		return null;
+	}
+	
+};
+const Match_MustacheEntry = /\{\{[A-Za-z][A-Za-z_\-:.#]*\}\}/gm;
+const Match_MustacheOnly = /[\{\}]*/gm;
+
+class PopLink{
+	
+
+    constructor(pop, parentElement){
+		
+		this.poppin = pop;
+		this.parent = parentElement;
+		
+	}
+	
+	place(data){
+		
+		this.data = data;
+		this.node = document.createElement('div');
+		this.node.setAttribute('pop-comp', this.poppin.name);
+		this.parse();
+		this.binder();
+		this.parent.appendChild(this.node);
+		
+	}
+	
+	parse(){
+		
+		var html = '';
+		
+		var m;
+		var pointer = 0;
+		
+		do {
+			m = Match_MustacheEntry.exec(this.poppin.template);
+			if (m) {
+				html += this.poppin.template.substring(pointer, m.index);
+				var opt = null;
+				var param = m[0].replace(Match_MustacheOnly, '');
+				
+				if( param.indexOf(':') > 0 ){
+					var paramSplit = param.split(':');
+					opt = paramSplit[0];
+					param = paramSplit[1];
+				}
+				
+				if(opt != null){
+					// TODO manage option
+				}
+				
+				// data
+				var v = eval('this.data.' + param);
+				html += '<span pop-bind="'+m[0].replace(Match_MustacheOnly, '')+'">' + v + '</span>';
+				pointer += m.index + m[0].length;
+			}
+		} while (m);
+		
+		html += this.poppin.template.substring(pointer);
+		
+		this.node.innerHTML = html;
+	}
+	
+	binder(){
+		
+		// pop-data-set
+		var elms = this.node.querySelectorAll('[pop-data-set]');
+		
+		for(var i=0; i< elms.length; i++){
+			var paramVal = elms[i].getAttribute("pop-data-set").split(':');
+			var eventType = paramVal[0];
+			var dataParam = paramVal[1];
+			elms[i].pop_data_set = dataParam;
+			elms[i].pop_root = this;
+			elms[i].addEventListener(eventType, function(ev){
+				
+				var pop = this.pop_root;
+				var param = this.pop_data_set;
+				
+				eval( 'pop.data.' + param + "= this.val();" );
+				
+			})
+			/*
+			if( elms[i].tagName.toLowerCase() == 'input' ){
+				elms[i].val(eval( 'this.behavior.' + name_param ));
+			}else{
+				elms[i].innerHTML = eval( 'this.behavior.' + name_param );
+			}
+			*/
+		}
+		
+		
+		
+		// pop-bind
+		var elms = this.node.querySelectorAll('[pop-bind]');
+		
+		if( typeof this.data_binder == 'undefined' )
+			this.data_binder = [];
+		
+		for(var i=0; i< elms.length; i++){
+		
+			var dataToBind = elms[i].getAttribute('pop-bind');
+			
+			if( typeof this.data_binder[dataToBind] == 'undefined' )
+				this.data_binder[dataToBind] = [];
+			
+			this.data_binder[dataToBind].push(elms[i]);
+			
+			var self = this.data_binder[dataToBind];
+			Object.defineProperty(this.data, elms[i].getAttribute('pop-bind'), {
+				configurable: true,
+				
+				set: function(v) {
+					this.value = v;
+					
+					for(i in self){
+						self[i].innerHTML = v;
+					}
+					
+				}
+			});
+		}
+		
+		
+	}
+	
+};
+
+class Poppin{
+
+    constructor(options){
+		
+		if( typeof options == 'object' ){
+		
+			this.name = options.name;
+			this.app_name = options.app_name;
+			this.template = options.template;
+					
+			this.behavior = options;
+			
+		}else{
+			console.log('Poppin without options... Nothing to do!');
+			return;
+		}
+		
+		this.load();
+		
+	}
+	
+	load(){
+		
+		this.app = Poppins.getApp(this.app_name);
+		this.app.addPoppin(this);
+		
+	}
+	
+	render(elm){
+		
+		if(elm == null){
+			elm = this.app.e;
+		}
+		
+		new PopLink(this, elm).place(this.behavior.data);
+		
+	}
+
+};
 window.onload = function() {
     Poppins.boot();
 };
@@ -7,25 +212,28 @@ window.onload = function() {
 var Poppins = {
         
 	load : 0,
-	ComponentWaiting : [],
+	apps : [],
 
 	/*
 		On Boot
-		- Start default l'app
-		- run apps
-		- lancia l'array di avvio dei component
 	*/	
 	boot : function(){
 		
 		Poppins.load = 1;
 		
-		Poppins.doc_parser();
-		
-		for( i in Poppins.ComponentWaiting ){
-			Poppins.ComponentWaiting[i].load();
+		for( i in Poppins.apps ){
+			Poppins.apps[i].load();
 		}
 		
-		Poppins.ComponentWaiting = [];
+		/*
+		Poppins.doc_parser();
+		
+		for( i in Poppins.poppins_waiting ){
+			Poppins.poppins_waiting[i].load();
+		}
+		
+		Poppins.poppins_waiting = [];
+		*/
 		
 		Poppins.load = 2;
 		
@@ -33,164 +241,55 @@ var Poppins = {
 	
 	doc_parser : function(){
 		
-		var elms = document.querySelectorAll('[p-component]');
+		var app = document.querySelectorAll('app');
 		
-		for(var i=0; i< elms.length; i++){
-			console.log('new component found', elms[i])
-			new PoppinsComp(elms[i]);
+		for(var i=0; i< app.length; i++){
+			new App(app[i].getAttribute('name'), app[i]);
 		}
+		
+		if(app.length == 0){
+			var a = document.createElement("app"); 
+			a.setAttribute('name', 'app')
+			document.body.appendChild(a);    
+			new App('app', a);
+		}
+			
+	},
+	
+	addApp : function(a){
+		Poppins.apps[a];
+	},
+	
+	getApp : function(name){
+		if(name == null)
+			return Poppins.apps[0];
+		
+		for(i in Poppins.apps){
+			if(Poppins.apps[i].name == name) 
+				return Poppins.apps[i];
+		}
+	},
+	
+	extend : function(){
+		for(var i=1; i<arguments.length; i++)
+			for(var key in arguments[i])
+				if(arguments[i].hasOwnProperty(key)) { 
+					if (typeof arguments[0][key] === 'object' && typeof arguments[i][key] === 'object')
+						extend(arguments[0][key], arguments[i][key]);
+					else
+					   arguments[0][key] = arguments[i][key];
+				 }
+		return arguments[0];
 	}
+	
+	
 	
 }
 
 
-class PoppinsComp{
-	
-	/**
-		name		: string
-		e 		 	: root element
-		
-	BEHAVIOR: // Data and methods
-		html	 	: html template
-		init	 	: function(){ ... }
-		
-		...
-		
-	*/
-	
- 
-	/**
-		Constructor
-		(string: selector)
-		(json: behavior)
-		(string: selector, json: behavior)
-	
-	*/
-    constructor(selector, behavior){
-		
-		this.selector = selector;
-        this.behavior = typeof behavior == 'object' ? behavior : null;
-		
-		if(Poppins.load < 2){
-			Poppins.ComponentWaiting.push(this);
-		}else{
-			this.load();
-		}
-		
-	}
-		
-    load(){
-		
-		this.e = typeof this.selector == 'string' ? document.querySelector(this.selector) : this.selector;
-		
-		this.template = this.e ? this.e.outerHTML : '';
-		
-		if( this.behavior == null ) this.behavior = {};
-		
-        this.render();
-    }
-	
-	render(){
-		
-		if(this.e == null) return;
-		
-		if(!this.e.hasAttribute('p-component')){
-			this.e.setAttribute('p-component', this.e.tagName);
-		}
-		
-		this.e.p_component = this;
-		
-		// p-data
-		var elms = this.e.querySelectorAll('[p-data]');
-		
-		for(var i=0; i< elms.length; i++){
-			var name_param = elms[i].getAttribute("p-data");
-			elms[i].innerHTML = eval( 'this.behavior.' + name_param );
-		}
-		
-		// p-bind
-		var elms = this.e.querySelectorAll('[p-bind]');
-		
-		for(var i=0; i< elms.length; i++){
-			
-			var name_param = elms[i].getAttribute("p-bind");
-			var params = name_param.split("#");
-			if(params.length != 2) continue;
-			elms[i].p_function_bind = params[1];
-			elms[i].addEventListener(params[0], function(ev){
-				
-				var compRoot = this.closest('[p-component]');
-				var comp = compRoot.p_component;
-				
-				var toFire = eval( 'comp.behavior.' + this.p_function_bind );
-				
-				if(typeof toFire == 'function'){
-					toFire(this, ev, comp);
-				}else{
-					eval( 'comp.behavior.' + this.p_function_bind + ' = this.val()');
-					//toFire  = this.val();
-				}
-			})
-		}
-		
-		// p-data-bind
-		var elms = this.e.querySelectorAll('[p-data-bind]');
-		
-		if( typeof this.dataBinder == 'undefined' )
-			this.dataBinder = [];
-		
-		for(var i=0; i< elms.length; i++){
-		
-			var dataToBind = elms[i].getAttribute('p-data-bind');
-			
-			if( typeof this.dataBinder[dataToBind] == 'undefined' )
-				this.dataBinder[dataToBind] = [];
-			
-			this.dataBinder[dataToBind].push(elms[i]);
-			
-			var self = this.dataBinder[dataToBind];
-			Object.defineProperty(this.behavior, elms[i].getAttribute('p-data-bind'), {
-				configurable: true,
-				/*
-				get: function() {
-					return firstName + ' ' + lastName;
-				},
-				*/
-				set: function(v) {
-					this.value = v;
-					
-					for(i in self){
-						self[i].innerHTML = v;
-					}
-					console.log('set')
-					/*
-					var vrbl = self.getAttribute('p-data-bind');
-					var elms = document.querySelectorAll('[p-data-bind="'+vrbl+'"]');
-					for(var i=0; i< elms.length; i++){
-						elms[i].innerHTML = v;
-					}
-					*/
-				}
-			});
-		}
-		
-		
-		/*
-		var rex = /\{[\ ]*[A-Za-z]{1}[A-Za-z0-9]*[\ ]*\}/g;
-		var m;
-		
-		do {
-			m = rex.exec(this.template);
-			if (m) {
-				m = m[0].substring(1, m[0].length - 1).trim();
-				
-			}
-		} while (m);
-		*/
-		
-	}
-	
-};
+
+
+;
 var Log = {
 
     Page : false,
@@ -266,11 +365,13 @@ Element.prototype.hasClass = function(c) {
 Element.prototype.remove = function() {
     this.parentElement.removeChild(this);
     return this;
-}
+};
 
 Element.prototype.val = function(v) {
     var form = this.closest('form');
-    
+    var i = 0;
+	
+	
     if(this.tagName.toLowerCase() == 'input'){
 
         if(this.getAttribute('type').toLowerCase() == 'checkbox'){
@@ -281,17 +382,19 @@ Element.prototype.val = function(v) {
             
             var radioList = form.querySelectorAll('input[type=radio][name='+this.name+']');
             
-            for(var i=0; i<radioList.length; i++){
+            for(i=0; i<radioList.length; i++){
                 
+				var chg = null;
+				
                 if(radioList[i].checked && v==null){
                     return radioList[i].value;
                 }else if(radioList[i].value == v && !radioList[i].checked){
                     radioList[i].checked = true;
-                    var chg = new Event("change");
+                    chg = new Event("change");
                     radioList[i].dispatchEvent(chg);
                 }else if(radioList[i].value != v && radioList[i].checked){
                     radioList[i].checked = false;
-                    var chg = new Event("change");
+                    chg = new Event("change");
                     radioList[i].dispatchEvent(chg);
                 }
             }
@@ -302,7 +405,7 @@ Element.prototype.val = function(v) {
     }else if(this.tagName.toLowerCase() == 'select'){
         if(v==null) return this.value;
         var opts = this.querySelectorAll('option');
-        for(var i=0; i<opts.length; i++){
+        for( i=0; i<opts.length; i++){
             opts[i].selected = false;
             if(opts[i].value == v){
                 opts[i].selected = true;
@@ -325,7 +428,7 @@ Element.prototype.closest = function(selector) {
             return true;
         }
         return false;
-    })
+    });
 
     var parent;
 
@@ -340,7 +443,7 @@ Element.prototype.closest = function(selector) {
     }
 
     return null;
-}
+};
 
 Element.prototype.data = function(n, v) {
     if(v == null){
@@ -356,7 +459,7 @@ Element.prototype.data = function(n, v) {
         this.dataset = v;
     }
     return this;
-}
+};
 
 /****** STRING UTILS ********/
 String.prototype.trim=function(){return this.replace(/^\s+|\s+$/g, '');};
@@ -439,7 +542,7 @@ var Intf = {
         pageOut.dispatchEvent(exitPageEvent);
         
         pageIn.addEventListener( 'animationend', Intf.changeViewEnd);
-        pageIn.addClass('active').addClass( inClass )
+        pageIn.addClass('active').addClass( inClass );
         pageIn.animationClass = inClass;
     },
 
@@ -831,15 +934,15 @@ Intf.form = {
                     var evt = document.createEvent("HTMLEvents");
                     evt.initEvent("change", false, true);
                     this.closest('form').dispatchEvent(evt);
-                })
+                });
                 rndsFound[r].addEventListener('change', function() {
                     var list = this.btnLink.MyForm.querySelectorAll('input[type=radio][name='+this.name+']');
                     for(var i=0;i<list.length;i++){
                         if(list[i].checked) {
-                            list[i].btnLink.addClass('active')
+                            list[i].btnLink.addClass('active');
                             list[i].btnLink.removeClass('hidden');
                         } else {
-                            list[i].btnLink.removeClass('active')
+                            list[i].btnLink.removeClass('active');
                             list[i].btnLink.addClass('hidden');
                         }
                         
@@ -872,22 +975,23 @@ Intf.form = {
                     var check = this.checkLink;
                     if(check.checked){
                         check.checked = false;
-                        this.removeClass('active')
+                        this.removeClass('active');
                     }else{
                         check.checked = true;
-                        this.addClass('active')
+                        this.addClass('active');
                     }
                     this.innerHTML = '<i class="fas fa-'+( check.checked ? 'check' : 'square' )+'"></i>';
                     var evt = document.createEvent("HTMLEvents");
                     evt.initEvent("change", false, true);
                     this.closest('form').dispatchEvent(evt);
-                })
+                });
+				
                 chksFound[r].addEventListener('change', function() {
                     this.btnLink.innerHTML = '<i class="fas fa-'+( this.checked ? 'check' : 'square' )+'"></i>';
                     if(this.checked){
-                        this.btnLink.addClass('active')
+                        this.btnLink.addClass('active');
                     }else{
-                        this.btnLink.removeClass('active')
+                        this.btnLink.removeClass('active');
                     }
                 });
                 chksFound[r].parentNode.insertBefore(btn, chksFound[r].nextSibling);
@@ -895,7 +999,7 @@ Intf.form = {
         }
     }
 
-}
+};
 ;
 var Message = {
 
@@ -903,7 +1007,7 @@ var Message = {
 
         if(!Array.isArray(j)) return;
 
-        for(i in j){
+        for(var i in j){
             if(j[i].type == 'NOTIFY') Message.showNotify(j[i]);
             else if(j[i].type == 'POPUP') Message.showPopup(j[i]);
             else if(j[i].type == 'FIELD') Message.showField(j[i]);
@@ -926,11 +1030,11 @@ var Message = {
         else if(e.level==4) msgObj.addClass('');
 
         var a = document.createElement('a');
-        a.addClass('close')
+        a.addClass('close');
         a.innerText = 'X';
         a.addEventListener('click', function(){
             this.closest('.alert').remove();
-        })
+        });
         msgObj.appendChild(a);
         
         if(typeof e.title=='string'){
@@ -948,7 +1052,7 @@ var Message = {
         if( Array.isArray(e.buttons) && e.buttons.length>0){
             var btnsCont = document.createElement('div');
             btnsCont.addClass('btnsContainer');
-            for(i in e.buttons){
+            for(var i in e.buttons){
                 var b = document.createElement('button');
                 b.type = 'button';
                 b.className = 'btn';
@@ -1005,7 +1109,7 @@ var Message = {
         if( Array.isArray(e.buttons) && e.buttons.length>0){
             var btnsCont = document.createElement('div');
             btnsCont.addClass('dialog-foot');
-            for(i in e.buttons){
+            for(var i in e.buttons){
                 var b = document.createElement('button');
                 b.type = 'button';
                 b.className = 'btn';
@@ -1030,7 +1134,7 @@ var Message = {
 
     }
 
-}
+};
 
 
 var Dialog = {
@@ -1089,7 +1193,7 @@ var Dialog = {
         if( openedDialog.length>0 ){
             openedDialog.forEach(function(e){
                 e.style.zIndex = 99999;
-                e.removeClass('first')
+                e.removeClass('first');
                 e.dialog.number++;
             });
         }
@@ -1101,7 +1205,7 @@ var Dialog = {
 
     close: function(){
         var o = document.querySelector('.dialog.open.first');
-        if( o==null || o.length == 0 ) return;
+        if( o == null || o.length == 0 ) return;
 
         o.removeClass('open');
         o.removeClass('first');
@@ -1136,7 +1240,7 @@ var Dialog = {
 
         var html = '<div class=" dialog-head"><h3>'+( title ? title : 'Info' )+'</h3></div>';
         html += '<div class="dialog-body">'+txt+'</div>';
-        html += '<div class="dialog-foot">'
+        html += '<div class="dialog-foot">';
         html += '<button type="button" class="btn active" onclick="Dialog.close();this.closest(\'.dialog\').remove();">Close</button>';
         html += '</div>';
 
@@ -1146,7 +1250,7 @@ var Dialog = {
         Dialog.open(dialog);
     }
 
-};/**
+};;/**
  * Mobile util
  */
 
@@ -1195,7 +1299,7 @@ var Mob = {
             }
 
             if(!Mob.geolocation.has()){
-                callBack(null, {code: -100, message:'geolocation not found'})
+                callBack(null, {code: -100, message:'geolocation not found'});
                 return;
             }
 
@@ -1214,7 +1318,7 @@ var Mob = {
             }
 
             if(!Mob.geolocation.has()){
-                callBack(null, {code: -100, message:'geolocation not found'})
+                callBack(null, {code: -100, message:'geolocation not found'});
                 return;
             }
             
@@ -1271,7 +1375,7 @@ var Mob = {
             return positionObject;
         }
     }
-};
+};;
 var StartPoppins = function() {
     Intf.init();
     Caller.init();

@@ -5,7 +5,7 @@ var Message = {
 
         if(!Array.isArray(j)) return;
 
-        for(i in j){
+        for(var i in j){
             if(j[i].type == 'NOTIFY') Message.showNotify(j[i]);
             else if(j[i].type == 'POPUP') Message.showPopup(j[i]);
             else if(j[i].type == 'FIELD') Message.showField(j[i]);
@@ -28,11 +28,11 @@ var Message = {
         else if(e.level==4) msgObj.addClass('');
 
         var a = document.createElement('a');
-        a.addClass('close')
+        a.addClass('close');
         a.innerText = 'X';
         a.addEventListener('click', function(){
             this.closest('.alert').remove();
-        })
+        });
         msgObj.appendChild(a);
         
         if(typeof e.title=='string'){
@@ -50,7 +50,7 @@ var Message = {
         if( Array.isArray(e.buttons) && e.buttons.length>0){
             var btnsCont = document.createElement('div');
             btnsCont.addClass('btnsContainer');
-            for(i in e.buttons){
+            for(var i in e.buttons){
                 var b = document.createElement('button');
                 b.type = 'button';
                 b.className = 'btn';
@@ -107,7 +107,7 @@ var Message = {
         if( Array.isArray(e.buttons) && e.buttons.length>0){
             var btnsCont = document.createElement('div');
             btnsCont.addClass('dialog-foot');
-            for(i in e.buttons){
+            for(var i in e.buttons){
                 var b = document.createElement('button');
                 b.type = 'button';
                 b.className = 'btn';
@@ -132,7 +132,7 @@ var Message = {
 
     }
 
-}
+};
 
 
 var Dialog = {
@@ -191,7 +191,7 @@ var Dialog = {
         if( openedDialog.length>0 ){
             openedDialog.forEach(function(e){
                 e.style.zIndex = 99999;
-                e.removeClass('first')
+                e.removeClass('first');
                 e.dialog.number++;
             });
         }
@@ -203,7 +203,7 @@ var Dialog = {
 
     close: function(){
         var o = document.querySelector('.dialog.open.first');
-        if( o==null || o.length == 0 ) return;
+        if( o == null || o.length == 0 ) return;
 
         o.removeClass('open');
         o.removeClass('first');
@@ -238,7 +238,7 @@ var Dialog = {
 
         var html = '<div class=" dialog-head"><h3>'+( title ? title : 'Info' )+'</h3></div>';
         html += '<div class="dialog-body">'+txt+'</div>';
-        html += '<div class="dialog-foot">'
+        html += '<div class="dialog-foot">';
         html += '<button type="button" class="btn active" onclick="Dialog.close();this.closest(\'.dialog\').remove();">Close</button>';
         html += '</div>';
 
@@ -248,4 +248,4 @@ var Dialog = {
         Dialog.open(dialog);
     }
 
-}
+};

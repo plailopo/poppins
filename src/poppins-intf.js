@@ -74,7 +74,7 @@ var Intf = {
         pageOut.dispatchEvent(exitPageEvent);
         
         pageIn.addEventListener( 'animationend', Intf.changeViewEnd);
-        pageIn.addClass('active').addClass( inClass )
+        pageIn.addClass('active').addClass( inClass );
         pageIn.animationClass = inClass;
     },
 
@@ -466,15 +466,15 @@ Intf.form = {
                     var evt = document.createEvent("HTMLEvents");
                     evt.initEvent("change", false, true);
                     this.closest('form').dispatchEvent(evt);
-                })
+                });
                 rndsFound[r].addEventListener('change', function() {
                     var list = this.btnLink.MyForm.querySelectorAll('input[type=radio][name='+this.name+']');
                     for(var i=0;i<list.length;i++){
                         if(list[i].checked) {
-                            list[i].btnLink.addClass('active')
+                            list[i].btnLink.addClass('active');
                             list[i].btnLink.removeClass('hidden');
                         } else {
-                            list[i].btnLink.removeClass('active')
+                            list[i].btnLink.removeClass('active');
                             list[i].btnLink.addClass('hidden');
                         }
                         
@@ -507,22 +507,23 @@ Intf.form = {
                     var check = this.checkLink;
                     if(check.checked){
                         check.checked = false;
-                        this.removeClass('active')
+                        this.removeClass('active');
                     }else{
                         check.checked = true;
-                        this.addClass('active')
+                        this.addClass('active');
                     }
                     this.innerHTML = '<i class="fas fa-'+( check.checked ? 'check' : 'square' )+'"></i>';
                     var evt = document.createEvent("HTMLEvents");
                     evt.initEvent("change", false, true);
                     this.closest('form').dispatchEvent(evt);
-                })
+                });
+				
                 chksFound[r].addEventListener('change', function() {
                     this.btnLink.innerHTML = '<i class="fas fa-'+( this.checked ? 'check' : 'square' )+'"></i>';
                     if(this.checked){
-                        this.btnLink.addClass('active')
+                        this.btnLink.addClass('active');
                     }else{
-                        this.btnLink.removeClass('active')
+                        this.btnLink.removeClass('active');
                     }
                 });
                 chksFound[r].parentNode.insertBefore(btn, chksFound[r].nextSibling);
@@ -530,4 +531,4 @@ Intf.form = {
         }
     }
 
-}
+};

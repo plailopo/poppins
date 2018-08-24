@@ -47,7 +47,7 @@ var Mob = {
             }
 
             if(!Mob.geolocation.has()){
-                callBack(null, {code: -100, message:'geolocation not found'})
+                callBack(null, {code: -100, message:'geolocation not found'});
                 return;
             }
 
@@ -66,7 +66,7 @@ var Mob = {
             }
 
             if(!Mob.geolocation.has()){
-                callBack(null, {code: -100, message:'geolocation not found'})
+                callBack(null, {code: -100, message:'geolocation not found'});
                 return;
             }
             
@@ -123,4 +123,4 @@ var Mob = {
             return positionObject;
         }
     }
-}
+};

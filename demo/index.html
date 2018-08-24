@@ -19,40 +19,70 @@
   </head>
 
   <body>
+  
+	<app id="demo"></app>
 	
-	<div class="demobox" id="P-PrintName">
-		<h2>Type your name</h2>
-		With method binder<br />
-		<input type="text" name="yourname">
-		<button type="button" p-bind="click#changeName">Go</button><br />
-		Hello <span p-data="yourname"></span>!
-	</div>
+		<!--
+		<pop name="HelloWorld" />
+		
+		
+		<pop name="PrintName" />
+		
+		<pop name="HelloWorld" />
 	
-	<div class="demobox" p-component="PrintName2">
-		<h2>Type your name</h2>
-		With auto binder<br />
-		<input type="text" p-bind="keyup#yourname"><br />
-		Hello <span p-data-bind="yourname"></span>!<br />
-		<span p-data-bind="yourname"></span>, do you like to buy an hamburger? Yes, you, <span p-data-bind="yourname"></span>
-	</div>
+		<div class="demobox" id="P-HelloWorld">
+		
+			<h2>Hello {{yourname}}</h2>
+			
+		</div>
+		
+		<div class="demobox" id="P-PrintName">
+		
+			<h2>Type your name</h2>
+			
+			With method binder<br />
+			
+			<input type="text" value="{{yourname}}">
+			
+			<button type="button" p-bind="click#changeName">Go</button><br />
+			
+			Hello {{bind:yourname}}!
+			
+		</div>
+		
+		<div class="demobox" id="P-PrintName2">
+			
+			<h2>Type your name</h2>
+			
+			With auto binder<br />
+			
+			<input type="text" p-bind="keyup#yourname"><br />
+			
+			Hello <span p-data-bind="yourname"></span>!<br />
+			
+			<span p-data-bind="yourname"></span>, do you like to buy an hamburger? Yes, you, <span p-data-bind="yourname"></span>
+		</div>
+		
+		<div class="demobox" pop="TodoList1">
+			<h2>Todo list</h2>
+			<input type="text" name="task">
+			<button type="button" p-bind="click#newTask">Go</button><br />
+			<ul pop-insert>
+				<li pop="TodoList-Item" p-template="true"></li>
+			</ul>
+		</div>
+		
+		<div class="demobox" id="P-TodoList2">
+			<h2>Todo list</h2>
+			<input type="text" name="task">
+			<button type="button" p-bind="click#newTask">Go</button><br />
+			<ul>
+				<li></li>
+			</ul>
+		</div>
+		
+		-->
 	
-	<div class="demobox" p-component="TodoList1">
-		<h2>Todo list</h2>
-		<input type="text" name="task">
-		<button type="button" p-bind="click#newTask">Go</button><br />
-		<ul p-data-bind="tasks">
-			<li p-data="name"></li>
-		</ul>
-	</div>
-	
-	<div class="demobox" id="P-TodoList2">
-		<h2>Todo list</h2>
-		<input type="text" name="task">
-		<button type="button" p-bind="click#newTask">Go</button><br />
-		<ul>
-			<li></li>
-		</ul>
-	</div>
 
   </body>
 </html>
