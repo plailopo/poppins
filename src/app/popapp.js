@@ -8,7 +8,7 @@ class PopApp{
 		this.onLoad = onLoad;
 		this.poppins = [];
 		
-		Poppins.apps.push(this);
+		Pop.apps.push(this);
 
 	}
 	

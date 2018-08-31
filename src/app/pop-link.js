@@ -48,7 +48,7 @@ class PopLink{
 				}
 				
 				// data
-				var v = eval('this.data.' + param);
+				var v = Pop.getValueByString(this.data, param);
 				html += '<span pop-bind="'+m[0].replace(Match_MustacheOnly, '')+'">' + v + '</span>';
 				pointer += m.index + m[0].length;
 			}
@@ -75,19 +75,11 @@ class PopLink{
 				var pop = this.pop_root;
 				var param = this.pop_data_set;
 				
-				eval( 'pop.data.' + param + "= this.val();" );
+				Pop.setValueByString(pop.data, param, this.val());
 				
 			})
-			/*
-			if( elms[i].tagName.toLowerCase() == 'input' ){
-				elms[i].val(eval( 'this.behavior.' + name_param ));
-			}else{
-				elms[i].innerHTML = eval( 'this.behavior.' + name_param );
-			}
-			*/
+
 		}
-		
-		
 		
 		// pop-bind
 		var elms = this.node.querySelectorAll('[pop-bind]');
@@ -105,13 +97,15 @@ class PopLink{
 			this.data_binder[dataToBind].push(elms[i]);
 			
 			var self = this.data_binder[dataToBind];
+			console.log(self)
 			Object.defineProperty(this.data, elms[i].getAttribute('pop-bind'), {
 				configurable: true,
 				
 				set: function(v) {
 					this.value = v;
-					
+					console.log('aloa',  self)
 					for(i in self){
+						console.log(self[i])
 						self[i].innerHTML = v;
 					}
 					

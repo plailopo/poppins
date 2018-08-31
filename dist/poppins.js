@@ -1,348 +1,68 @@
 
 
-class PopApp{
-	
-    constructor(name, onLoad){
-		
-		this.name = name;
-		this.onLoad = onLoad;
-		this.poppins = [];
-		
-		Poppins.apps.push(this);
-
-	}
-	
-	load(){
-		var oldTag = document.querySelector('app#'+this.name);
-		this.e = document.createElement('div');
-		this.e.innerHTML = oldTag.innerHTML;
-		oldTag.parentNode.replaceChild(this.e, oldTag);
-		
-		for( i in this.onLoad ){
-			this.loadPop(this.onLoad[i]);
-		}
-	}
-	
-	loadPop(name){
-		this.getPoppin(name).render();
-	}
-	
-	addPoppin(pop){
-		this.poppins.push(pop);
-	}
-	
-	getPoppin(name){
-		for(i in this.poppins){
-			if(this.poppins[i].name == name)
-				return this.poppins[i];
-		}
-		return null;
-	}
-	
-};
-const Match_MustacheEntry = /\{\{[A-Za-z][A-Za-z_\-:.#]*\}\}/gm;
-const Match_MustacheOnly = /[\{\}]*/gm;
-
-class PopLink{
-	
-
-    constructor(pop, parentElement){
-		
-		this.poppin = pop;
-		this.parent = parentElement;
-		
-	}
-	
-	place(data){
-		
-		this.data = data;
-		this.node = document.createElement('div');
-		this.node.setAttribute('pop-comp', this.poppin.name);
-		this.parse();
-		this.binder();
-		this.parent.appendChild(this.node);
-		
-	}
-	
-	parse(){
-		
-		var html = '';
-		
-		var m;
-		var pointer = 0;
-		
-		do {
-			m = Match_MustacheEntry.exec(this.poppin.template);
-			if (m) {
-				html += this.poppin.template.substring(pointer, m.index);
-				var opt = null;
-				var param = m[0].replace(Match_MustacheOnly, '');
-				
-				if( param.indexOf(':') > 0 ){
-					var paramSplit = param.split(':');
-					opt = paramSplit[0];
-					param = paramSplit[1];
-				}
-				
-				if(opt != null){
-					// TODO manage option
-				}
-				
-				// data
-				var v = eval('this.data.' + param);
-				html += '<span pop-bind="'+m[0].replace(Match_MustacheOnly, '')+'">' + v + '</span>';
-				pointer += m.index + m[0].length;
-			}
-		} while (m);
-		
-		html += this.poppin.template.substring(pointer);
-		
-		this.node.innerHTML = html;
-	}
-	
-	binder(){
-		
-		// pop-data-set
-		var elms = this.node.querySelectorAll('[pop-data-set]');
-		
-		for(var i=0; i< elms.length; i++){
-			var paramVal = elms[i].getAttribute("pop-data-set").split(':');
-			var eventType = paramVal[0];
-			var dataParam = paramVal[1];
-			elms[i].pop_data_set = dataParam;
-			elms[i].pop_root = this;
-			elms[i].addEventListener(eventType, function(ev){
-				
-				var pop = this.pop_root;
-				var param = this.pop_data_set;
-				
-				eval( 'pop.data.' + param + "= this.val();" );
-				
-			})
-			/*
-			if( elms[i].tagName.toLowerCase() == 'input' ){
-				elms[i].val(eval( 'this.behavior.' + name_param ));
-			}else{
-				elms[i].innerHTML = eval( 'this.behavior.' + name_param );
-			}
-			*/
-		}
-		
-		
-		
-		// pop-bind
-		var elms = this.node.querySelectorAll('[pop-bind]');
-		
-		if( typeof this.data_binder == 'undefined' )
-			this.data_binder = [];
-		
-		for(var i=0; i< elms.length; i++){
-		
-			var dataToBind = elms[i].getAttribute('pop-bind');
-			
-			if( typeof this.data_binder[dataToBind] == 'undefined' )
-				this.data_binder[dataToBind] = [];
-			
-			this.data_binder[dataToBind].push(elms[i]);
-			
-			var self = this.data_binder[dataToBind];
-			Object.defineProperty(this.data, elms[i].getAttribute('pop-bind'), {
-				configurable: true,
-				
-				set: function(v) {
-					this.value = v;
-					
-					for(i in self){
-						self[i].innerHTML = v;
-					}
-					
-				}
-			});
-		}
-		
-		
-	}
-	
-};
-
-class Poppin{
-
-    constructor(options){
-		
-		if( typeof options == 'object' ){
-		
-			this.name = options.name;
-			this.app_name = options.app_name;
-			this.template = options.template;
-					
-			this.behavior = options;
-			
-		}else{
-			console.log('Poppin without options... Nothing to do!');
-			return;
-		}
-		
-		this.load();
-		
-	}
-	
-	load(){
-		
-		this.app = Poppins.getApp(this.app_name);
-		this.app.addPoppin(this);
-		
-	}
-	
-	render(elm){
-		
-		if(elm == null){
-			elm = this.app.e;
-		}
-		
-		new PopLink(this, elm).place(this.behavior.data);
-		
-	}
-
-};
 window.onload = function() {
-    Poppins.boot();
+    Pop.boot();
+	Intf.init();
+    
+	//Caller.init();
 };
 
 
-var Poppins = {
-        
-	load : 0,
-	apps : [],
+var Pop = {};
+Pop.getValueByString = function(obj, s) {
 
-	/*
-		On Boot
-	*/	
-	boot : function(){
-		
-		Poppins.load = 1;
-		
-		for( i in Poppins.apps ){
-			Poppins.apps[i].load();
-		}
-		
-		/*
-		Poppins.doc_parser();
-		
-		for( i in Poppins.poppins_waiting ){
-			Poppins.poppins_waiting[i].load();
-		}
-		
-		Poppins.poppins_waiting = [];
-		*/
-		
-		Poppins.load = 2;
-		
-	},
-	
-	doc_parser : function(){
-		
-		var app = document.querySelectorAll('app');
-		
-		for(var i=0; i< app.length; i++){
-			new App(app[i].getAttribute('name'), app[i]);
-		}
-		
-		if(app.length == 0){
-			var a = document.createElement("app"); 
-			a.setAttribute('name', 'app')
-			document.body.appendChild(a);    
-			new App('app', a);
-		}
-			
-	},
-	
-	addApp : function(a){
-		Poppins.apps[a];
-	},
-	
-	getApp : function(name){
-		if(name == null)
-			return Poppins.apps[0];
-		
-		for(i in Poppins.apps){
-			if(Poppins.apps[i].name == name) 
-				return Poppins.apps[i];
-		}
-	},
-	
-	extend : function(){
-		for(var i=1; i<arguments.length; i++)
-			for(var key in arguments[i])
-				if(arguments[i].hasOwnProperty(key)) { 
-					if (typeof arguments[0][key] === 'object' && typeof arguments[i][key] === 'object')
-						extend(arguments[0][key], arguments[i][key]);
-					else
-					   arguments[0][key] = arguments[i][key];
-				 }
-		return arguments[0];
-	}
-	
-	
-	
+    var keys = s.split(".");
+
+    for (var i = 0; i < keys.length; i++) {
+
+        if (!(keys[i] in obj) || obj[keys[i]] === null || typeof obj[keys[i]] == 'undefined') {
+            return null;
+        }
+
+        obj = obj[keys[i]];
+    }
+
+    return obj;
 }
 
+Pop.setValueByString = function(obj, s, val) {
+	
+	var str = '';
+    var keys = s.split(".");
 
-
-
-;
-var Log = {
-
-    Page : false,
-
-    start : function(){
-
-        Log.Page = document.createElement("div");
-        Log.Page.style.cssText = 'position:absolute;left:0;top:0;width:100%;min-height:1400px;z-index:9999999;background:#222222;';
-        Log.Page.className = 'hidden';
-        document.getElementsByTagName("BODY")[0].appendChild(Log.Page);
-
-        var lnk = document.createElement("a");
-        lnk.style.cssText = 'position:absolute;left:50%;top:0;z-index:9999999;color:#dd0000;padding:2px;width:100px;text-align:center;margin-left:-50px;';
-        lnk.innerText = 'debug';
-        lnk.addEventListener('click', Log.toggle);
-        document.getElementsByTagName("BODY")[0].appendChild(lnk);
-
-        Log.flush();
-
-        window.onerror = function(message, url, lineNumber) {
-            Log.error(message +' '+ url + ' ('+lineNumber+')');
-            console.log(message +' '+ url + ' ('+lineNumber+')')
-            return true;
-        };
-    },
-
-    error: function(msg){
-        Log.Page.innerHTML += '<div style="color:#dd0000;margin:2px 2px 6px 2px;"> - ' + msg + '</div>';
-    },
-
-    debug: function(msg){
-        Log.Page.innerHTML += '<div style="color:#eeeeee;margin:2px 2px 6px 2px;"> - ' + msg + '</div>';
-    },
-
-    open: function(){
-        Log.Page.removeClass('hidden');
-    },
-
-    close: function(){
-        Log.Page.addClass('hidden');
-    },
-
-    toggle: function(){
-        if(Log.Page.hasClass('hidden'))
-            Log.Page.removeClass('hidden');
-        else
-            Log.Page.addClass('hidden');
-    },
-
-    flush: function(){
-        Log.Page.innerHTML = '<div class="right"><button class="btn" onclick="Log.flush()">flush</button></div>';
+    for (var i = 0; i < keys.length; i++) {
+	
+		str += '{ "' + keys[i] + '" : ';
+		
     }
-};
+	
+	if(typeof val == 'string'){
+		str += '"' + val + '"';
+	}else{
+		str += val;
+	}
+	
+	for (var i = 0; i < keys.length; i++) {
+	
+		str += '}';
+		
+    }
+	
+	obj = Pop.extend(obj, JSON.parse(str));
+    
+}
+
+Pop.extend = function(){
+	for(var i=1; i<arguments.length; i++)
+		for(var key in arguments[i])
+			if(arguments[i].hasOwnProperty(key)) { 
+				if (typeof arguments[0][key] === 'object' && typeof arguments[i][key] === 'object')
+					Pop.extend(arguments[0][key], arguments[i][key]);
+				else
+				   arguments[0][key] = arguments[i][key];
+			 }
+	return arguments[0];
+};;
 /****** ELEMENT UTILS ********/
 
 Element.prototype.addClass = function(c) {
@@ -1000,257 +720,7 @@ Intf.form = {
     }
 
 };
-;
-var Message = {
-
-    parse : function(j){
-
-        if(!Array.isArray(j)) return;
-
-        for(var i in j){
-            if(j[i].type == 'NOTIFY') Message.showNotify(j[i]);
-            else if(j[i].type == 'POPUP') Message.showPopup(j[i]);
-            else if(j[i].type == 'FIELD') Message.showField(j[i]);
-        }
-    },
-
-    showNotify: function(e){
-
-        if(typeof e.text == 'undefined' ) return;
-        var UID = new Date().getTime();
-
-        var msgObj = document.createElement('div');
-        msgObj.className = 'alert';
-        msgObj.id =  'MSG_'+UID;
-
-        if(e.level==0)      msgObj.addClass('alert-error');
-        else if(e.level==1) msgObj.addClass('alert-warn');
-        else if(e.level==2) msgObj.addClass('alert-success');
-        else if(e.level==3) msgObj.addClass('alert-info');
-        else if(e.level==4) msgObj.addClass('');
-
-        var a = document.createElement('a');
-        a.addClass('close');
-        a.innerText = 'X';
-        a.addEventListener('click', function(){
-            this.closest('.alert').remove();
-        });
-        msgObj.appendChild(a);
-        
-        if(typeof e.title=='string'){
-            var title = document.createElement('h3');
-            title.innerText = e.title;
-            msgObj.appendChild(title);
-        }
-
-        if(typeof e.text=='string'){
-            var text = document.createElement('p');
-            text.innerHTML = e.text;
-            msgObj.appendChild(text);
-        }
-
-        if( Array.isArray(e.buttons) && e.buttons.length>0){
-            var btnsCont = document.createElement('div');
-            btnsCont.addClass('btnsContainer');
-            for(var i in e.buttons){
-                var b = document.createElement('button');
-                b.type = 'button';
-                b.className = 'btn';
-                b.addClass(e.buttons[i].className);
-                b.dataset.btnAction = e.buttons[i].action;
-                b.innerText = e.buttons[i].text;
-                b.addEventListener('click', function(){
-                    eval(this.dataset.btnAction);
-                });
-                btnsCont.appendChild(b);
-            }
-            msgObj.appendChild(btnsCont);
-        }
-
-        var m = document.getElementById('Poppins-Notify-Container');
-        if(m == null){
-            m = document.createElement("div");
-            m.id = 'Poppins-Notify-Container';
-            m.className = 'poppinsNotifyContainer';
-            document.body.appendChild(m);
-        }
-        m.appendChild(msgObj);
-    },
-
-    showPopup: function(e){
-
-        if(typeof e.text == 'undefined' ) return;
-        var UID = new Date().getTime();
-
-        var msgObj = document.createElement('div');
-        msgObj.className = 'dialog';
-        msgObj.id =  'MSG_'+UID;
-
-        if(e.level==0)      msgObj.addClass('dialog-error');
-        else if(e.level==1) msgObj.addClass('dialog-warn');
-        else if(e.level==2) msgObj.addClass('dialog-success');
-        else if(e.level==3) msgObj.addClass('dialog-info');
-        else if(e.level==4) msgObj.addClass('');
-        
-        if(typeof e.title=='string'){
-            var title = document.createElement('div');
-            title.addClass('dialog-head');
-            title.innerHTML = '<h3>'+e.title+'</h3>';
-            msgObj.appendChild(title);
-        }
-
-        if(typeof e.text=='string'){
-            var text = document.createElement('div');
-            text.addClass('dialog-body');
-            text.innerHTML = e.text;
-            msgObj.appendChild(text);
-        }
-
-        if( Array.isArray(e.buttons) && e.buttons.length>0){
-            var btnsCont = document.createElement('div');
-            btnsCont.addClass('dialog-foot');
-            for(var i in e.buttons){
-                var b = document.createElement('button');
-                b.type = 'button';
-                b.className = 'btn';
-                b.addClass(e.buttons[i].className);
-                b.dataset.btnAction = e.buttons[i].action;
-                b.innerText = e.buttons[i].text;
-                b.addEventListener('click', function(){
-                    eval(this.dataset.btnAction);
-                });
-                btnsCont.appendChild(b);
-            }
-            msgObj.appendChild(btnsCont);
-        }
-
-        document.body.appendChild(msgObj);
-
-        Dialog.open('MSG_'+UID);
-
-    },
-
-    showField: function(d){
-
-    }
-
-};
-
-
-var Dialog = {
-
-    showMask: function(){
-        var m = document.getElementById('Poppins-MASK');
-        if(m == null){
-            m = document.createElement("div");
-            m.id = 'Poppins-MASK';
-            m.className = 'poppinsMask';
-            document.body.appendChild(m);
-        }
-        m.addClass('active');
-    },
-
-    hideMask: function(){
-        document.getElementById('Poppins-MASK').removeClass('active');
-    },
-
-    open: function(id, opt){
-
-        if(opt == null) opt = {};
-        var set = {
-            draggable: typeof opt.draggable == 'undefined' ? true : opt.draggable,
-            btnClose: typeof opt.btnClose == 'undefined' ? true : opt.btnClose,
-            open: typeof opt.open == 'undefined' ? function(){} : opt.open,
-            close: typeof opt.close == 'undefined' ? function(){} : opt.close,
-            number: 0
-        };
-
-        var d = id;
-        if(typeof d == 'string')
-            d = document.getElementById(id);
-
-        if( d.length==0 ) return;
-
-        Dialog.showMask();
-
-        d.dialog = set;
-
-        if( d.querySelector('a.close')==null && set.btnClose ){
-            var a = document.createElement('a');
-            a.className = 'close';
-            a.innerText = 'X';
-            a.addEventListener('click', Dialog.close);
-            d.insertBefore(a, d.firstChild);
-        }
-
-        if(typeof set.open == 'function'){
-            set.open(d);
-        }else if(typeof set.open == 'string'){
-            eval( set.open + "(d);" );
-        }
-
-        var openedDialog = document.querySelectorAll('.dialog.open');
-        if( openedDialog.length>0 ){
-            openedDialog.forEach(function(e){
-                e.style.zIndex = 99999;
-                e.removeClass('first');
-                e.dialog.number++;
-            });
-        }
-        
-        d.addClass('open');
-        d.addClass('first');
-        
-    },
-
-    close: function(){
-        var o = document.querySelector('.dialog.open.first');
-        if( o == null || o.length == 0 ) return;
-
-        o.removeClass('open');
-        o.removeClass('first');
-        var set = o.dialog;
-
-        if(typeof set.close == 'function'){
-            set.close(o);
-        }else if(typeof set.close == 'string'){
-            eval( set.close + "(o);" );
-        }
-
-        var openedDialog = document.querySelectorAll('.dialog.open');
-        if(openedDialog.length==0){
-            Dialog.hideMask();
-            return;
-        }
-
-        openedDialog.forEach(function(e){
-            e.dialog.number--;
-            if(e.dialog.number == 0){
-                e.addClass('first');
-                e.style.zIndex = 100001;
-            }
-        });
-    },
-
-    alert: function(txt, title){
-        
-        var dialog = document.createElement('div');
-        dialog.className = 'dialog dialog-info';
-        dialog.id = 'DialogAlert' + new Date().getTime();
-
-        var html = '<div class=" dialog-head"><h3>'+( title ? title : 'Info' )+'</h3></div>';
-        html += '<div class="dialog-body">'+txt+'</div>';
-        html += '<div class="dialog-foot">';
-        html += '<button type="button" class="btn active" onclick="Dialog.close();this.closest(\'.dialog\').remove();">Close</button>';
-        html += '</div>';
-
-        dialog.innerHTML = html;
-
-        document.body.appendChild(dialog);
-        Dialog.open(dialog);
-    }
-
-};;/**
+;/**
  * Mobile util
  */
 
@@ -1376,166 +846,264 @@ var Mob = {
         }
     }
 };;
-var StartPoppins = function() {
-    Intf.init();
-    Caller.init();
+
+Pop.load = 0;
+Pop.apps = [];
+
+Pop.boot = function(){
+		
+	Pop.load = 1;
+	
+	for( i in Pop.apps ){
+		Pop.apps[i].load();
+	}
+	
+	/*
+	Pop.doc_parser();
+	
+	for( i in Pop.poppins_waiting ){
+		Pop.poppins_waiting[i].load();
+	}
+	
+	Pop.poppins_waiting = [];
+	*/
+	
+	Pop.load = 2;
+	
+};
+	
+Pop.doc_parser = function(){
+		
+	var app = document.querySelectorAll('app');
+	
+	for(var i=0; i< app.length; i++){
+		new App(app[i].getAttribute('name'), app[i]);
+	}
+	
+	if(app.length == 0){
+		var a = document.createElement("app"); 
+		a.setAttribute('name', 'app')
+		document.body.appendChild(a);    
+		new App('app', a);
+	}
+		
+};
+	
+Pop.addApp = function(a){
+	Pop.apps[a];
+};
+	
+Pop.getApp = function(name){
+	if(name == null)
+		return Pop.apps[0];
+	
+	for(i in Pop.apps){
+		if(Pop.apps[i].name == name) 
+			return Pop.apps[i];
+	}
 };
 
 
-// Server caller
-var Caller = {
-    
-    afterReq: false,
-    beforeReq: false,
-    baseUrl : '',
-    params : [],
-    jwtPayload : {},
 
-    init: function(){
-        if(typeof window.localStorage.TKN == 'string'){
-            var pos = window.localStorage.TKN.indexOf('.') + 1;
-            Caller.jwtPayload = JSON.parse(atob(window.localStorage.TKN.substring(pos, window.localStorage.TKN.indexOf('.', pos))));
-        }
-    },
-    /**
-     * make moopsy standard ajax calls
-     * All calls send a json
-     * 
-     * Parameters:
-     *      a: service url
-     *      dt: JSON data or form id selector (#idForm)
-     *      cb: Callback for response
-     *      
-     */
-    req : function(a,dt,cb){
 
-        if(typeof Caller.beforeReq === 'function') dt = Caller.beforeReq(dt);
-        var cBack = cb;
 
-        var data = {};
-        if(typeof dt == 'string'){
-            data = Caller.form2JSON(dt);
-        }else if(typeof dt == 'object'){
-            data = dt;
-        }
+;
+const Match_MustacheEntry = /\{\{[A-Za-z][A-Za-z_\-:.#]*\}\}/gm;
+const Match_MustacheOnly = /[\{\}]*/gm;
 
-        data.TKN = window.localStorage.TKN;
+class PopLink{
+	
 
-        for(var i in Caller.params){
-            data[Caller.params[i].key] = Caller.params[i].value;
-        }
-
-        var headers = new Headers();
-        headers.append("Content-Type", "application/json");
-
-        fetch(Caller.baseUrl + a, {
-            method: "post",
-            headers: headers,
-            body: JSON.stringify(dt)
-         }).then(response => {
-             
-            if (response.ok) {
-                
-                response.json().then( r => {
-
-                    var jwt = r.TKN;
-                    
-                    if(typeof jwt == 'string'){
-                        window.localStorage.TKN = jwt;
-                        var pos = window.localStorage.TKN.indexOf('.') + 1;
-                        Caller.jwtPayload = JSON.parse(atob(window.localStorage.TKN.substring(pos, window.localStorage.TKN.indexOf('.', pos))));
-                    }
-                    
-                    if(typeof Caller.afterReq === 'function'){
-                        r = Caller.afterReq(r);
-                        if(r === false) return;
-                    }
-                    if(r.messages) Message.parse(r.messages);
-                    if( typeof cBack == 'function') cBack(r);
-                });
-            }
-            if (response.status >= 100 && response.status < 200) {
-                console.log("Informazioni per il client");
-            }
-            if (response.status >= 300 && response.status < 399) {
-                console.log("Redirezione");
-            }
-            if (response.status >= 400 && response.status < 499) {
-                Message.showNotify({text: 'Info not found.<br />Try to update Moopsy ;)', leve: 0, title: 'Warning'});
-            }
-            if (response.status >= 500 && response.status < 599) {
-                Message.showNotify({text: 'Server error! Re-try', leve: 0, title: 'Warning'});
-            }
-         }).catch(error => {
-            Message.showNotify({text: 'Server error! Re-try', leve: 0, title: 'Warning'});
-         });
-
-    },
-
-    linkPost : function(a,d,t){// action, data, target
-
-        var id = "FORM-POST-" + new Date().getTime();
-        var html = '<form action="'+Caller.baseUrl+a+'" method="post" id="'+id+'"';
-        if(a=='') html = '<form action="" method="post" ';
-        if(t) html += 'target="' + t + '" ';
-        html += '>';
-        if(typeof(d)=='object') for(var i=0;i<d.length;i++){
-            if( d[i].value instanceof Array ){
-                for(var l=0;l<d[i].value.length;l++){
-                    if (typeof d[i].value[l]=="string") d[i].value[l] = d[i].value[l].replace(/"/g, '\\');
-                    html += '<input type="hidden" name="'+d[i].name+'[]" value="'+d[i].value[l]+'" />';
-                }
-            }else{
-                if (typeof d[i].value=="string") d[i].value = d[i].value.replace(/"/g, '\'');
-                html += '<input type="hidden" name="'+d[i].name+'" value="'+d[i].value+'" />';
-            }
-        }
-        html += '</form>';
-        document.querySelectorAll('body')[0].insertAdjacentHTML('beforeend', html);
-        document.getElementById(id).submit();
-
-    },
-
-    addParam: function(k,v){
-        Caller.params.push({key:k,value:v});
-    },
-
-    form2JSON : function( formId ) {
-
-        var obj = {};
-        var form = typeof formId == 'string' ? document.getElementById(formId) : formId;
-		var elements = form.querySelectorAll( "input, select, textarea" );
-		for( var i = 0; i < elements.length; ++i ) {
-            var element = elements[i];
-            if(element.type == 'radio' && !element.checked) continue;
-            if(element.type == 'checkbox' && !element.checked) continue;
-			var name = element.name;
-			var value = element.value;
-
-			if( name ) {
-				obj[ name ] = value;
+    constructor(pop, parentElement){
+		
+		this.poppin = pop;
+		this.parent = parentElement;
+		
+	}
+	
+	place(data){
+		
+		this.data = data;
+		this.node = document.createElement('div');
+		this.node.setAttribute('pop-comp', this.poppin.name);
+		this.parse();
+		this.binder();
+		this.parent.appendChild(this.node);
+		
+	}
+	
+	parse(){
+		
+		var html = '';
+		
+		var m;
+		var pointer = 0;
+		
+		do {
+			m = Match_MustacheEntry.exec(this.poppin.template);
+			if (m) {
+				html += this.poppin.template.substring(pointer, m.index);
+				var opt = null;
+				var param = m[0].replace(Match_MustacheOnly, '');
+				
+				if( param.indexOf(':') > 0 ){
+					var paramSplit = param.split(':');
+					opt = paramSplit[0];
+					param = paramSplit[1];
+				}
+				
+				if(opt != null){
+					// TODO manage option
+				}
+				
+				// data
+				var v = Pop.getValueByString(this.data, param);
+				html += '<span pop-bind="'+m[0].replace(Match_MustacheOnly, '')+'">' + v + '</span>';
+				pointer += m.index + m[0].length;
 			}
+		} while (m);
+		
+		html += this.poppin.template.substring(pointer);
+		
+		this.node.innerHTML = html;
+	}
+	
+	binder(){
+		
+		// pop-data-set
+		var elms = this.node.querySelectorAll('[pop-data-set]');
+		
+		for(var i=0; i< elms.length; i++){
+			var paramVal = elms[i].getAttribute("pop-data-set").split(':');
+			var eventType = paramVal[0];
+			var dataParam = paramVal[1];
+			elms[i].pop_data_set = dataParam;
+			elms[i].pop_root = this;
+			elms[i].addEventListener(eventType, function(ev){
+				
+				var pop = this.pop_root;
+				var param = this.pop_data_set;
+				
+				Pop.setValueByString(pop.data, param, this.val());
+				
+			})
+
 		}
-
-		return obj;
-    },
-    
-    startFormAutoSave: function(selector){
-        var form = document.querySelector(selector);
-        if( !form.hasClass('FormAutoSave') ){
-            form.addEventListener('change', function() {
-                if( this.hasClass('FormAutoSave-Active') )
-                    Caller.req(this.action, Caller.form2JSON(this));
-            });
-        }
-        form.addClass('FormAutoSave');
-        form.addClass('FormAutoSave-Active');
-    },
-
-    stopFormAutoSave: function(selector){
-        var form = document.querySelector(selector);
-        form.removeClass('FormAutoSave-Active');
-    }
+		
+		// pop-bind
+		var elms = this.node.querySelectorAll('[pop-bind]');
+		
+		if( typeof this.data_binder == 'undefined' )
+			this.data_binder = [];
+		
+		for(var i=0; i< elms.length; i++){
+		
+			var dataToBind = elms[i].getAttribute('pop-bind');
+			
+			if( typeof this.data_binder[dataToBind] == 'undefined' )
+				this.data_binder[dataToBind] = [];
+			
+			this.data_binder[dataToBind].push(elms[i]);
+			
+			var self = this.data_binder[dataToBind];
+			console.log(self)
+			Object.defineProperty(this.data, elms[i].getAttribute('pop-bind'), {
+				configurable: true,
+				
+				set: function(v) {
+					this.value = v;
+					console.log('aloa',  self)
+					for(i in self){
+						console.log(self[i])
+						self[i].innerHTML = v;
+					}
+					
+				}
+			});
+		}
+		
+		
+	}
+	
 };
 
+class Poppin{
 
+    constructor(options){
+		
+		if( typeof options == 'object' ){
+		
+			this.name = options.name;
+			this.app_name = options.app_name;
+			this.template = options.template;
+					
+			this.behavior = options;
+			
+		}else{
+			console.log('Poppin without options... Nothing to do!');
+			return;
+		}
+		
+		this.load();
+		
+	}
+	
+	load(){
+		
+		this.app = Pop.getApp(this.app_name);
+		this.app.addPoppin(this);
+		
+	}
+	
+	render(elm){
+		
+		if(elm == null){
+			elm = this.app.e;
+		}
+		
+		new PopLink(this, elm).place(this.behavior.data);
+		
+	}
+
+};
+
+class PopApp{
+	
+    constructor(name, onLoad){
+		
+		this.name = name;
+		this.onLoad = onLoad;
+		this.poppins = [];
+		
+		Pop.apps.push(this);
+
+	}
+	
+	load(){
+		var oldTag = document.querySelector('app#'+this.name);
+		this.e = document.createElement('div');
+		this.e.innerHTML = oldTag.innerHTML;
+		oldTag.parentNode.replaceChild(this.e, oldTag);
+		
+		for( i in this.onLoad ){
+			this.loadPop(this.onLoad[i]);
+		}
+	}
+	
+	loadPop(name){
+		this.getPoppin(name).render();
+	}
+	
+	addPoppin(pop){
+		this.poppins.push(pop);
+	}
+	
+	getPoppin(name){
+		for(i in this.poppins){
+			if(this.poppins[i].name == name)
+				return this.poppins[i];
+		}
+		return null;
+	}
+	
+}

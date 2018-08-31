@@ -13,11 +13,13 @@ new Poppin({
 	
 	name : 'HelloZio',
 	app_name : 'demo',
-	template : '<h2>Hello {{nickname}}</h2>\
-	<input type="text" pop-data-set="keyup:nickname" />',
+	template : '<h2>Hello {{user.nickname}}</h2>\
+	<input type="text" pop-data-set="keyup:user.nickname" />',
 	
 	data : {
-		nickname : 'Zio'
+		user : {
+			nickname : 'Zio'
+		}
 	}
 	
 	

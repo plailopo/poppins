@@ -23,7 +23,7 @@ class Poppin{
 	
 	load(){
 		
-		this.app = Poppins.getApp(this.app_name);
+		this.app = Pop.getApp(this.app_name);
 		this.app.addPoppin(this);
 		
 	}
