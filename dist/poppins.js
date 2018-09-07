@@ -9,7 +9,7 @@ window.onload = function() {
 
 
 var Pop = {};
-Pop.getValueByString = function(obj, s) {
+Pop.getDataByString = function(obj, s) {
 
     var keys = s.split(".");
 
@@ -25,12 +25,13 @@ Pop.getValueByString = function(obj, s) {
     return obj;
 }
 
-Pop.setValueByString = function(obj, s, val) {
+Pop.setDataByString = function(obj, s, val) {
 	
 	var str = '';
     var keys = s.split(".");
+	var i;
 
-    for (var i = 0; i < keys.length; i++) {
+    for (i = 0; i < keys.length; i++) {
 	
 		str += '{ "' + keys[i] + '" : ';
 		
@@ -42,7 +43,7 @@ Pop.setValueByString = function(obj, s, val) {
 		str += val;
 	}
 	
-	for (var i = 0; i < keys.length; i++) {
+	for (i = 0; i < keys.length; i++) {
 	
 		str += '}';
 		
@@ -93,6 +94,10 @@ Element.prototype.val = function(v) {
 	
 	
     if(this.tagName.toLowerCase() == 'input'){
+		
+		if(!this.hasAttribute('type')){
+			this.setAttribute('type', 'text');
+		}
 
         if(this.getAttribute('type').toLowerCase() == 'checkbox'){
             if(this.checked && v==null) return this.value;
@@ -908,9 +913,130 @@ Pop.getApp = function(name){
 
 
 ;
+var DataObserver = {
+	
+	object_handler : {
+		
+		get: function(target, property) {
+			return Reflect.get(...arguments);
+		},
+		
+		set(obj, prop, value) {
+			if(typeof value === 'object'){
+				value = DataObserver.data_parser(value);
+			}
+			return Reflect.set(...arguments);
+		}	
+	},
+	
+	data_parser : function(o){
+	
+	
+		Object.defineProperty(o, "_addPoppin", {
+			configurable : true,
+			value: function(pop, elm){
+				if ( this._poppins == undefined )
+					this._poppins = [];
+				this._poppins.push({p:pop, e:elm})
+			}
+		});
+		
+		Object.defineProperty(o, "_getPoppin", {
+			configurable : true,
+			value: function(){
+				return this._poppins
+			}
+		});
+		
+		
+		if(Array.isArray(o)){
+			Object.defineProperty(o, "push", {
+				configurable : true,
+				value: function(o){
+					[].push.call(this, o);
+					for(var p in this._poppins)
+						this._poppins[p].p.render(this._poppins[p].e, o);
+				}
+			});
+		}else{
+			o = new Proxy(o, DataObserver.object_handler);
+		}
+		
+		for (var i in o) {
+			if (o[i] !== null && typeof(o[i])=="object") {
+				o[i] = DataObserver.data_parser(o[i]);
+			}
+		}
+		
+		return o;
+	}
+}
+
+;
 const Match_MustacheEntry = /\{\{[A-Za-z][A-Za-z_\-:.#]*\}\}/gm;
 const Match_MustacheOnly = /[\{\}]*/gm;
 
+var ParserHTML = {
+	
+	
+	html_by_template : function(tmpl, data){
+			
+		var html = '';
+		
+		var m;
+		var pointer = 0;
+		
+		do {
+			m = Match_MustacheEntry.exec(tmpl);
+			if (m) {
+				html += tmpl.substring(pointer, m.index);
+				var opt = null;
+				var param = m[0].replace(Match_MustacheOnly, '');
+				
+				if( param.indexOf(':') > 0 ){
+					var paramSplit = param.split(':');
+					opt = paramSplit[0];
+					param = paramSplit[1];
+				}
+				
+				if(opt != null){
+					// TODO manage option
+				}
+				
+				// data
+				var v = Pop.getDataByString(data, param);
+				var withTag = true;
+				var tmpPos = m.index - 1;
+				
+				while(tmpPos >= 0){
+					if( tmpl.substr(tmpPos, 1) == "<" ){
+						withTag = false;
+						break;
+					}else if( tmpl.substr(tmpPos, 1) == ">" ){
+						withTag = true;
+						break;
+					}
+					tmpPos--;
+				}
+				
+				if(withTag) html += '<span pop-bind="'+m[0].replace(Match_MustacheOnly, '')+'">';
+				html += v == null ? '' : v;
+				if(withTag) html += '</span>';
+				
+				pointer = m.index + m[0].length;
+			}
+		} while (m);
+		
+		html += tmpl.substr(pointer);
+		
+		return html;
+	}
+};
+//const Match_MustacheEntry = /\{\{[A-Za-z][A-Za-z_\-:.#]*\}\}/gm;
+//const Match_MustacheOnly = /[\{\}]*/gm;
+
+
+/*
 class PopLink{
 	
 
@@ -928,6 +1054,7 @@ class PopLink{
 		this.node.setAttribute('pop-comp', this.poppin.name);
 		this.parse();
 		this.binder();
+		this.sub_poppins();
 		this.parent.appendChild(this.node);
 		
 	}
@@ -957,14 +1084,12 @@ class PopLink{
 				}
 				
 				// data
-				var v = Pop.getValueByString(this.data, param);
+				var v = Pop.getDataByString(this.data, param);
 				var withTag = true;
 				var tmpPos = m.index - 1;
-				console.log('#############')
+				
 				while(tmpPos >= 0){
-					console.log('attenzioie', this.poppin.template.substr(tmpPos, 1));
 					if( this.poppin.template.substr(tmpPos, 1) == "<" ){
-						console.log('trovato, esco')
 						withTag = false;
 						break;
 					}else if( this.poppin.template.substr(tmpPos, 1) == ">" ){
@@ -973,17 +1098,16 @@ class PopLink{
 					}
 					tmpPos--;
 				}
-
-				console.log('ok' , withTag)
+				
 				if(withTag) html += '<span pop-bind="'+m[0].replace(Match_MustacheOnly, '')+'">';
-				html += v;
+				html += v == null ? '' : v;
 				if(withTag) html += '</span>';
-
-				pointer += m.index + m[0].length;
+				
+				pointer = m.index + m[0].length;
 			}
 		} while (m);
 		
-		html += this.poppin.template.substring(pointer);
+		html += this.poppin.template.substr(pointer);
 		
 		this.node.innerHTML = html;
 	}
@@ -1008,7 +1132,13 @@ class PopLink{
 				var pop = this.pop_root;
 				var param = this.pop_data_set;
 				
-				Pop.setValueByString(pop.data, param, this.val());
+				var fnc = Pop.getDataByString(pop.poppin.behavior, param);
+				
+				if(typeof fnc == 'function'){
+					fnc(this, ev);
+				}else{
+					Pop.setDataByString(pop.data, param, this.val());
+				}
 				
 			})
 
@@ -1056,26 +1186,62 @@ class PopLink{
 			});
 		}
 		
+	}
+	
+	sub_poppins(){
+		
+		var elms = this.node.querySelectorAll('pop');
+		
+		for(var i=0; i< elms.length; i++){
+			
+			var name = elms[i].getAttribute('name');
+			var dt = Pop.getDataByString(this.data, elms[i].getAttribute('pop-data'));
+			
+			var e = document.createElement('div');
+			elms[i].parentNode.replaceChild(e, elms[i]);
+			
+			var p = new PopLink(this.poppin.app.getPoppin(name), e);
+			
+			if( Array.isArray(dt) ){
+				for(i in dt) p.place(dt[i]);
+			}else{
+				p.place(dt);
+			}
+		}
 		
 	}
 	
-};
+}
+
+*/;
 
 class Poppin{
 
-    constructor(options){
+    constructor(name, tmplt, options){
 		
-		if( typeof options == 'object' ){
+		this.name = name;
 		
-			this.name = options.name;
-			this.app_name = options.app_name;
-			this.template = options.template;
-					
-			this.behavior = options;
+		if( typeof tmplt == 'string' ){
+			
+			this.template = tmplt;
+			
+			if( typeof options == 'object' ){
+		
+				this.data = options;
+				
+			}
+		
+		}else if( typeof tmplt == 'object' ){
+		
+			this.app_refer = tmplt.app;
+			this.template = tmplt.template;
+			this.data = tmplt.data;
 			
 		}else{
-			console.log('Poppin without options... Nothing to do!');
+			
+			console.log('Poppin without options ' + this.name + '... Nothing to do!');
 			return;
+			
 		}
 		
 		this.load();
@@ -1084,18 +1250,172 @@ class Poppin{
 	
 	load(){
 		
-		this.app = Pop.getApp(this.app_name);
+		if(typeof this.app_refer == 'string'){
+			this.app = Pop.getApp(this.app_refer);
+		}else if(typeof this.app_refer == 'object'){
+			this.app = this.app_refer;
+		}else{
+			this.app = Pop.getApp();
+		}
+		
+		if(this.data == undefined)
+			this.data = {};
+		
+		DataObserver.data_parser(this.data);
+		
+		/*
+		var elm = this.app.e.querySelector(this.template);
+		if(typeof elm == 'object'){
+			this.template = elm.outerHTML;
+			elm.remove();
+		}
+		*/
+		
 		this.app.addPoppin(this);
 		
 	}
 	
-	render(elm){
+	render(elm, data_ref){
 		
 		if(elm == null){
-			elm = this.app.e;
+			var elm = document.createElement('pop');
+			elm.setAttribute('name', this.name);
+			this.app.e.appendChild(elm);
 		}
 		
-		new PopLink(this, elm).place(this.behavior.data);
+		if(data_ref == null){
+			data_ref = this.data;
+		}
+		
+		var html = ParserHTML.html_by_template(this.template, data_ref);
+		
+		var tmpElm = document.createElement('div');
+		tmpElm.innerHTML = html;
+		var node = tmpElm.firstChild;
+		elm.parentElement.insertBefore(tmpElm.firstChild, elm.nextSibling);
+		
+		this.binder(node, data_ref);
+		
+		console.log(data_ref)
+		data_ref._addPoppin(this, node);
+		
+		console.log('go', data_ref)
+		this.sub_poppins(node, data_ref);
+		
+	}
+	
+	binder(node, data_ref){
+		
+		// POP-FIRE
+		// pop-fire="event:variable/method;event:variable/method;event:variable/method"
+		// when event fire:
+		// 		- variable: is setted with tag value. Only for INPUT, SELECT or TEXTAREA
+		//		- method: run method as method(event, element, poppin)
+		
+		var elms = node.querySelectorAll('[pop-fire]');
+		
+		for(var i=0; i< elms.length; i++){
+			
+			var elm = elms[i];
+			var fires = elm.getAttribute("pop-fire").split(';');
+			
+			elm.pop_fire = [];
+			for(var f=0; f< fires.length; f++){
+				
+				var fire = fires[f].split(':');
+				var event = fire[0];
+				var action = fire[1];
+				
+				elm.pop_fire.push({event: event, action: action});
+				elm.pop = this;
+				elm.addEventListener(event, function(ev){
+					
+					for(i in this.pop_fire){
+						if(this.pop_fire[i].event == ev.type){
+							
+							var fnc = Pop.getDataByString(window, this.pop_fire[i].action);
+							
+							if(typeof fnc == 'function'){
+								fnc(this, ev);
+							}else{
+								Pop.setDataByString(this.pop.data, this.pop_fire[i].action, this.val());
+							}
+							
+							break;
+						}
+					}
+					
+				})
+				
+			}
+
+		}
+		
+		// POP-BIND
+		// pop-bind="variable"
+		// when variable change, inner
+		var elms = node.querySelectorAll('[pop-bind]');
+		
+		if( typeof this.data_binder == 'undefined' )
+			this.data_binder = [];
+		
+		for(var i=0; i< elms.length; i++){
+		
+			var dataToBind = elms[i].getAttribute('pop-bind');
+			
+			if( typeof this.data_binder[dataToBind] == 'undefined' )
+				this.data_binder[dataToBind] = [];
+			
+			this.data_binder[dataToBind].push(elms[i]);
+			
+			var self = this.data_binder[dataToBind];
+			
+			var pathVar = data_ref;
+			var lastVar = elms[i].getAttribute('pop-bind');
+			var varSplitted = lastVar.split('.');
+			for(var l in varSplitted){
+				if(l==0) continue;
+				lastVar = varSplitted[l];
+				pathVar = pathVar[varSplitted[l-1]]
+			}
+
+			Object.defineProperty(pathVar, lastVar, {
+				configurable: true,
+				
+				set: function(v) {
+					this.value = v;
+					
+					for(i in self){
+						self[i].innerHTML = v;
+					}
+					
+				}
+			});
+		}
+		
+	}
+		
+	sub_poppins(node, data_ref){
+		
+		var elms = node.querySelectorAll('pop');
+		
+		for(var i=0; i< elms.length; i++){
+			
+			var name = elms[i].getAttribute('name');
+			var dt = Pop.getDataByString(data_ref, elms[i].getAttribute('pop-data'));
+			
+			var p = this.app.getPoppin(name);
+			
+			if( Array.isArray(dt) ){
+				dt._addPoppin(p, elms[i]);
+				for(var l in dt)
+					p.render(elms[i], dt[l]);
+				
+			}else{
+				p.render(elms[i], dt);
+			}
+			
+		}
 		
 	}
 
@@ -1117,6 +1437,7 @@ class PopApp{
 		var oldTag = document.querySelector('app#'+this.name);
 		this.e = document.createElement('div');
 		this.e.innerHTML = oldTag.innerHTML;
+		this.e.setAttribute('pop-app', this.name);
 		oldTag.parentNode.replaceChild(this.e, oldTag);
 		
 		for( i in this.onLoad ){

@@ -16,6 +16,7 @@ class PopApp{
 		var oldTag = document.querySelector('app#'+this.name);
 		this.e = document.createElement('div');
 		this.e.innerHTML = oldTag.innerHTML;
+		this.e.setAttribute('pop-app', this.name);
 		oldTag.parentNode.replaceChild(this.e, oldTag);
 		
 		for( i in this.onLoad ){

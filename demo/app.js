@@ -1,41 +1,83 @@
+// Create APP
+new PopApp('demo', ['HelloWorld', 'HelloZio', 'HelloSub', 'List']);
 
-new PopApp('demo', ['HelloWorld', 'HelloZio']);
 
-new Poppin({
-	
-	name : 'HelloWorld',
-	app_name : 'demo',
-	template : '<h2>Hello Horld</h2>',
-	
-});
+// Helo world
+new Poppin( 'HelloWorld', '<h2>Hello Horld</h2>');
 
-new Poppin({
+
+// Hello your nickname
+new Poppin('HelloZio', {
 	
-	name : 'HelloZio',
-	app_name : 'demo',
-	template : '<h2>Hello {{user.nickname}}</h2>\
-	<input type="text" pop-data-set="keyup:user.nickname" value="{{user.nickname}}" />',
+	app : 'demo',
+	template : '<div>\
+		<h2>Hello {{user.nickname}}</h2>\
+		<input pop-fire="keyup:user.nickname" value="{{user.nickname}}" />\
+	</div>',
 	
 	data : {
 		user : {
 			nickname : 'Zio'
 		}
 	}
-	
-	
+
 });
 
+// Sub poppin
+new Poppin('HelloSub', '<div>\
+			<pop name="SubPop" pop-data="user"></pop>\
+			<input pop-fire="keyup:user.nickname" value="{{user.nickname}}" />\
+		</div>',
+	{
+		user : {
+			nickname : 'Zio sub'
+		}
+	});
+	
+new Poppin('SubPop','<h2>Hello with sub Poppin: {{nickname}}</h2>');
 
-/*
-new Poppin('PrintName', {
+
+// TODO LIST
+
+
+var List = {
 	
-	selector : '#P-PrintName',
+	items : [
+		{id: 1, content : 'Zio 1'},
+		{id: 2, content : 'Zio 2'},
+		{id: 3, content : 'Zio 3'}
+	],
+			
+	add : function(element, event){
+		List.items.push({id: new Date().getTime(), content: element.val()});
+		element.val('');
+	},
 	
-	yourname : 'Gigi',
-	
-	changeName: function(element, event, component){
-		component.root_element.querySelector('span').innerHTML = component.root_element.querySelector('input').val();
+	rem : function(element, event){
+		for(i in this.data.list){
+			if(this.data.list[i].id == element.dataset.id){
+				this.data.list = this.data.list.slice(i, 1);
+				break;
+			}
+		}
+		
 	}
+}
+
+new Poppin('List', {
 	
+	template : '<div><h2>Todo List</h2>\
+				<input pop-fire="change:List.add" />\
+				<ul>\
+					<pop name="Item" pop-data="list"></pop>\
+				</ul></div>',
+	
+	data : {
+		list : List.items
+	}
+
 });
-*/
+
+new Poppin('Item','<li data-id="{{id}}">{{content}}</li>');
+
+

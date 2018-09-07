@@ -1,5 +1,5 @@
 
-Pop.getValueByString = function(obj, s) {
+Pop.getDataByString = function(obj, s) {
 
     var keys = s.split(".");
 
@@ -15,12 +15,13 @@ Pop.getValueByString = function(obj, s) {
     return obj;
 }
 
-Pop.setValueByString = function(obj, s, val) {
+Pop.setDataByString = function(obj, s, val) {
 	
 	var str = '';
     var keys = s.split(".");
+	var i;
 
-    for (var i = 0; i < keys.length; i++) {
+    for (i = 0; i < keys.length; i++) {
 	
 		str += '{ "' + keys[i] + '" : ';
 		
@@ -32,7 +33,7 @@ Pop.setValueByString = function(obj, s, val) {
 		str += val;
 	}
 	
-	for (var i = 0; i < keys.length; i++) {
+	for (i = 0; i < keys.length; i++) {
 	
 		str += '}';
 		

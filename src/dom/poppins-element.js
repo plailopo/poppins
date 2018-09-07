@@ -29,6 +29,10 @@ Element.prototype.val = function(v) {
 	
 	
     if(this.tagName.toLowerCase() == 'input'){
+		
+		if(!this.hasAttribute('type')){
+			this.setAttribute('type', 'text');
+		}
 
         if(this.getAttribute('type').toLowerCase() == 'checkbox'){
             if(this.checked && v==null) return this.value;

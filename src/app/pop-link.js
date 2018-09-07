@@ -1,7 +1,9 @@
 
-const Match_MustacheEntry = /\{\{[A-Za-z][A-Za-z_\-:.#]*\}\}/gm;
-const Match_MustacheOnly = /[\{\}]*/gm;
+//const Match_MustacheEntry = /\{\{[A-Za-z][A-Za-z_\-:.#]*\}\}/gm;
+//const Match_MustacheOnly = /[\{\}]*/gm;
 
+
+/*
 class PopLink{
 	
 
@@ -19,6 +21,7 @@ class PopLink{
 		this.node.setAttribute('pop-comp', this.poppin.name);
 		this.parse();
 		this.binder();
+		this.sub_poppins();
 		this.parent.appendChild(this.node);
 		
 	}
@@ -48,14 +51,12 @@ class PopLink{
 				}
 				
 				// data
-				var v = Pop.getValueByString(this.data, param);
+				var v = Pop.getDataByString(this.data, param);
 				var withTag = true;
 				var tmpPos = m.index - 1;
-				console.log('#############')
+				
 				while(tmpPos >= 0){
-					console.log('attenzioie', this.poppin.template.substr(tmpPos, 1));
 					if( this.poppin.template.substr(tmpPos, 1) == "<" ){
-						console.log('trovato, esco')
 						withTag = false;
 						break;
 					}else if( this.poppin.template.substr(tmpPos, 1) == ">" ){
@@ -64,17 +65,16 @@ class PopLink{
 					}
 					tmpPos--;
 				}
-
-				console.log('ok' , withTag)
+				
 				if(withTag) html += '<span pop-bind="'+m[0].replace(Match_MustacheOnly, '')+'">';
-				html += v;
+				html += v == null ? '' : v;
 				if(withTag) html += '</span>';
-
-				pointer += m.index + m[0].length;
+				
+				pointer = m.index + m[0].length;
 			}
 		} while (m);
 		
-		html += this.poppin.template.substring(pointer);
+		html += this.poppin.template.substr(pointer);
 		
 		this.node.innerHTML = html;
 	}
@@ -99,7 +99,13 @@ class PopLink{
 				var pop = this.pop_root;
 				var param = this.pop_data_set;
 				
-				Pop.setValueByString(pop.data, param, this.val());
+				var fnc = Pop.getDataByString(pop.poppin.behavior, param);
+				
+				if(typeof fnc == 'function'){
+					fnc(this, ev);
+				}else{
+					Pop.setDataByString(pop.data, param, this.val());
+				}
 				
 			})
 
@@ -147,7 +153,31 @@ class PopLink{
 			});
 		}
 		
+	}
+	
+	sub_poppins(){
+		
+		var elms = this.node.querySelectorAll('pop');
+		
+		for(var i=0; i< elms.length; i++){
+			
+			var name = elms[i].getAttribute('name');
+			var dt = Pop.getDataByString(this.data, elms[i].getAttribute('pop-data'));
+			
+			var e = document.createElement('div');
+			elms[i].parentNode.replaceChild(e, elms[i]);
+			
+			var p = new PopLink(this.poppin.app.getPoppin(name), e);
+			
+			if( Array.isArray(dt) ){
+				for(i in dt) p.place(dt[i]);
+			}else{
+				p.place(dt);
+			}
+		}
 		
 	}
 	
 }
+
+*/
