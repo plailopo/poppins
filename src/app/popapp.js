@@ -4,8 +4,9 @@ class PopApp{
 	
     constructor(name, onLoad){
 		
+		this.loaded = 0;
 		this.name = name;
-		this.onLoad = onLoad;
+		this.onLoad = onLoad != null ? onLoad : [];
 		this.poppins = [];
 		
 		Pop.apps.push(this);
@@ -18,6 +19,7 @@ class PopApp{
 		this.e.innerHTML = oldTag.innerHTML;
 		this.e.setAttribute('pop-app', this.name);
 		oldTag.parentNode.replaceChild(this.e, oldTag);
+		this.loaded = 100;
 		
 		for( i in this.onLoad ){
 			this.loadPop(this.onLoad[i]);
@@ -25,7 +27,11 @@ class PopApp{
 	}
 	
 	loadPop(name){
-		this.getPoppin(name).render();
+		if(this.loaded < 100){
+			this.onLoad.push(name);
+		}else{
+			this.getPoppin(name).render();
+		}
 	}
 	
 	addPoppin(pop){

@@ -43,18 +43,10 @@ class Poppin{
 			this.app = Pop.getApp();
 		}
 		
-		if(this.data == undefined)
+		if(this.data === undefined)
 			this.data = {};
 		
 		DataObserver.data_parser(this.data);
-		
-		/*
-		var elm = this.app.e.querySelector(this.template);
-		if(typeof elm == 'object'){
-			this.template = elm.outerHTML;
-			elm.remove();
-		}
-		*/
 		
 		this.app.addPoppin(this);
 		
@@ -77,14 +69,12 @@ class Poppin{
 		var tmpElm = document.createElement('div');
 		tmpElm.innerHTML = html;
 		var node = tmpElm.firstChild;
-		elm.parentElement.insertBefore(tmpElm.firstChild, elm.nextSibling);
+		elm.parentElement.insertBefore(node, elm.nextSibling);
 		
 		this.binder(node, data_ref);
 		
-		console.log(data_ref)
 		data_ref._addPoppin(this, node);
 		
-		console.log('go', data_ref)
 		this.sub_poppins(node, data_ref);
 		
 	}
@@ -141,41 +131,20 @@ class Poppin{
 		// when variable change, inner
 		var elms = node.querySelectorAll('[pop-bind]');
 		
-		if( typeof this.data_binder == 'undefined' )
-			this.data_binder = [];
-		
 		for(var i=0; i< elms.length; i++){
-		
-			var dataToBind = elms[i].getAttribute('pop-bind');
-			
-			if( typeof this.data_binder[dataToBind] == 'undefined' )
-				this.data_binder[dataToBind] = [];
-			
-			this.data_binder[dataToBind].push(elms[i]);
-			
-			var self = this.data_binder[dataToBind];
 			
 			var pathVar = data_ref;
 			var lastVar = elms[i].getAttribute('pop-bind');
 			var varSplitted = lastVar.split('.');
-			for(var l in varSplitted){
-				if(l==0) continue;
-				lastVar = varSplitted[l];
-				pathVar = pathVar[varSplitted[l-1]]
-			}
-
-			Object.defineProperty(pathVar, lastVar, {
-				configurable: true,
-				
-				set: function(v) {
-					this.value = v;
-					
-					for(i in self){
-						self[i].innerHTML = v;
-					}
-					
+			if(varSplitted.length > 1){
+				for(var l in varSplitted){
+					lastVar = varSplitted[l];
+					if(l < varSplitted.length-1) pathVar = Pop.getDataByString(pathVar, lastVar);
 				}
-			});
+			}
+			
+			pathVar._addBinder(lastVar, elms[i]);
+			
 		}
 		
 	}
@@ -193,8 +162,10 @@ class Poppin{
 			
 			if( Array.isArray(dt) ){
 				dt._addPoppin(p, elms[i]);
-				for(var l in dt)
+				
+				for(var l = 0; l < dt.length; l++){
 					p.render(elms[i], dt[l]);
+				}
 				
 			}else{
 				p.render(elms[i], dt);

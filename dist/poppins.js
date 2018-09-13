@@ -856,8 +856,6 @@ Pop.load = 0;
 Pop.apps = [];
 
 Pop.boot = function(){
-		
-	Pop.load = 1;
 	
 	for( i in Pop.apps ){
 		Pop.apps[i].load();
@@ -872,8 +870,6 @@ Pop.boot = function(){
 	
 	Pop.poppins_waiting = [];
 	*/
-	
-	Pop.load = 2;
 	
 };
 	
@@ -921,47 +917,109 @@ var DataObserver = {
 			return Reflect.get(...arguments);
 		},
 		
-		set(obj, prop, value) {
+		set: function(obj, prop, value) {
+			console.log('set', prop, value, obj._pop_binders)
 			if(typeof value === 'object'){
 				value = DataObserver.data_parser(value);
+				console.log(obj._pop_binders)
+				for(var i in obj._pop_binders[prop]){
+					console.log(i)
+				}
+			}else{
+				for(var i in obj._pop_binders[prop]){
+					obj._pop_binders[prop][i].innerHTML = value;
+				}
 			}
 			return Reflect.set(...arguments);
-		}	
+		}
+		
+	},
+	
+	array_handler : {
+		
+		get: function(target, property) {
+			//console.log('getting array ' + property + ' for ' + target);
+			// property is index in this case
+			return target[property];
+		},
+		
+		set: function(target, property, value, receiver) {
+			console.log('setting array ' + property + ' for ' + target + ' with value ' + value);
+			target[property] = value;
+			// you have to return true to accept the changes
+			return true;
+		}
+		
 	},
 	
 	data_parser : function(o){
-	
+		
+		if( o._poppins !== undefined ) return o;
+		
+		// Defining POPPINS
+		// Poppins list for data
+		Object.defineProperty(o, "_poppins", {
+			configurable : false,
+			value: []
+		});
 	
 		Object.defineProperty(o, "_addPoppin", {
-			configurable : true,
+			configurable : false,
 			value: function(pop, elm){
-				if ( this._poppins == undefined )
-					this._poppins = [];
 				this._poppins.push({p:pop, e:elm})
 			}
 		});
 		
 		Object.defineProperty(o, "_getPoppin", {
-			configurable : true,
+			configurable : false,
 			value: function(){
 				return this._poppins
 			}
 		});
 		
+		// Defining BINDER list
+		Object.defineProperty(o, "_pop_binders", {
+			configurable : false,
+			value: []
+		});
+	
+		Object.defineProperty(o, "_addBinder", {
+			configurable : false,
+			value: function(name, elm){
+				console.log(name, elm)
+				if( this._pop_binders[name] === undefined )
+					this._pop_binders[name] = [];
+				
+				this._pop_binders[name].push(elm);
+			}
+		});
+		
+		Object.defineProperty(o, "_getBinders", {
+			configurable : false,
+			value: function(){
+				return this._pop_binders
+			}
+		});
 		
 		if(Array.isArray(o)){
+			
+			o = new Proxy(o, DataObserver.object_handler);
+			/*
 			Object.defineProperty(o, "push", {
 				configurable : true,
 				value: function(o){
 					[].push.call(this, o);
-					for(var p in this._poppins)
-						this._poppins[p].p.render(this._poppins[p].e, o);
+					if ( typeof(o) == "object") {
+						o = DataObserver.data_parser(o);
+					}
 				}
 			});
+			*/
 		}else{
 			o = new Proxy(o, DataObserver.object_handler);
+			
 		}
-		
+
 		for (var i in o) {
 			if (o[i] !== null && typeof(o[i])=="object") {
 				o[i] = DataObserver.data_parser(o[i]);
@@ -1258,18 +1316,10 @@ class Poppin{
 			this.app = Pop.getApp();
 		}
 		
-		if(this.data == undefined)
+		if(this.data === undefined)
 			this.data = {};
 		
 		DataObserver.data_parser(this.data);
-		
-		/*
-		var elm = this.app.e.querySelector(this.template);
-		if(typeof elm == 'object'){
-			this.template = elm.outerHTML;
-			elm.remove();
-		}
-		*/
 		
 		this.app.addPoppin(this);
 		
@@ -1292,14 +1342,12 @@ class Poppin{
 		var tmpElm = document.createElement('div');
 		tmpElm.innerHTML = html;
 		var node = tmpElm.firstChild;
-		elm.parentElement.insertBefore(tmpElm.firstChild, elm.nextSibling);
+		elm.parentElement.insertBefore(node, elm.nextSibling);
 		
 		this.binder(node, data_ref);
 		
-		console.log(data_ref)
 		data_ref._addPoppin(this, node);
 		
-		console.log('go', data_ref)
 		this.sub_poppins(node, data_ref);
 		
 	}
@@ -1356,41 +1404,20 @@ class Poppin{
 		// when variable change, inner
 		var elms = node.querySelectorAll('[pop-bind]');
 		
-		if( typeof this.data_binder == 'undefined' )
-			this.data_binder = [];
-		
 		for(var i=0; i< elms.length; i++){
-		
-			var dataToBind = elms[i].getAttribute('pop-bind');
-			
-			if( typeof this.data_binder[dataToBind] == 'undefined' )
-				this.data_binder[dataToBind] = [];
-			
-			this.data_binder[dataToBind].push(elms[i]);
-			
-			var self = this.data_binder[dataToBind];
 			
 			var pathVar = data_ref;
 			var lastVar = elms[i].getAttribute('pop-bind');
 			var varSplitted = lastVar.split('.');
-			for(var l in varSplitted){
-				if(l==0) continue;
-				lastVar = varSplitted[l];
-				pathVar = pathVar[varSplitted[l-1]]
-			}
-
-			Object.defineProperty(pathVar, lastVar, {
-				configurable: true,
-				
-				set: function(v) {
-					this.value = v;
-					
-					for(i in self){
-						self[i].innerHTML = v;
-					}
-					
+			if(varSplitted.length > 1){
+				for(var l in varSplitted){
+					lastVar = varSplitted[l];
+					if(l < varSplitted.length-1) pathVar = Pop.getDataByString(pathVar, lastVar);
 				}
-			});
+			}
+			
+			pathVar._addBinder(lastVar, elms[i]);
+			
 		}
 		
 	}
@@ -1408,8 +1435,10 @@ class Poppin{
 			
 			if( Array.isArray(dt) ){
 				dt._addPoppin(p, elms[i]);
-				for(var l in dt)
+				
+				for(var l = 0; l < dt.length; l++){
 					p.render(elms[i], dt[l]);
+				}
 				
 			}else{
 				p.render(elms[i], dt);
@@ -1425,8 +1454,9 @@ class PopApp{
 	
     constructor(name, onLoad){
 		
+		this.loaded = 0;
 		this.name = name;
-		this.onLoad = onLoad;
+		this.onLoad = onLoad != null ? onLoad : [];
 		this.poppins = [];
 		
 		Pop.apps.push(this);
@@ -1439,6 +1469,7 @@ class PopApp{
 		this.e.innerHTML = oldTag.innerHTML;
 		this.e.setAttribute('pop-app', this.name);
 		oldTag.parentNode.replaceChild(this.e, oldTag);
+		this.loaded = 100;
 		
 		for( i in this.onLoad ){
 			this.loadPop(this.onLoad[i]);
@@ -1446,7 +1477,11 @@ class PopApp{
 	}
 	
 	loadPop(name){
-		this.getPoppin(name).render();
+		if(this.loaded < 100){
+			this.onLoad.push(name);
+		}else{
+			this.getPoppin(name).render();
+		}
 	}
 	
 	addPoppin(pop){

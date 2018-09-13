@@ -4,8 +4,6 @@ Pop.load = 0;
 Pop.apps = [];
 
 Pop.boot = function(){
-		
-	Pop.load = 1;
 	
 	for( i in Pop.apps ){
 		Pop.apps[i].load();
@@ -20,8 +18,6 @@ Pop.boot = function(){
 	
 	Pop.poppins_waiting = [];
 	*/
-	
-	Pop.load = 2;
 	
 };
 	
