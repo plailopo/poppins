@@ -944,8 +944,15 @@ var DataObserver = {
 		},
 		
 		set: function(target, property, value, receiver) {
-			console.log('setting array ' + property + ' for ' + target + ' with value ' + value);
+			console.log('setting array ' , property , ' for ' , target , ' with value ' , value);
 			target[property] = value;
+			if( property != 'length' && typeof value === 'object'){
+				console.log('ok', target._pop_binders)
+				value = DataObserver.data_parser(value);
+				for(var i in target._pop_binders[property]){
+					console.log(i)
+				}
+			}
 			// you have to return true to accept the changes
 			return true;
 		}
@@ -1003,7 +1010,7 @@ var DataObserver = {
 		
 		if(Array.isArray(o)){
 			
-			o = new Proxy(o, DataObserver.object_handler);
+			o = new Proxy(o, DataObserver.array_handler);
 			/*
 			Object.defineProperty(o, "push", {
 				configurable : true,
