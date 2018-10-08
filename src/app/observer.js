@@ -8,10 +8,9 @@ var DataObserver = {
 		},
 		
 		set: function(obj, prop, value) {
-			console.log('set', prop, value, obj._pop_binders)
+			
 			if(typeof value === 'object'){
 				value = DataObserver.data_parser(value);
-				console.log(obj._pop_binders)
 				for(var i in obj._pop_binders[prop]){
 					console.log(i)
 				}
@@ -28,19 +27,16 @@ var DataObserver = {
 	array_handler : {
 		
 		get: function(target, property) {
-			//console.log('getting array ' + property + ' for ' + target);
-			// property is index in this case
 			return target[property];
 		},
 		
 		set: function(target, property, value, receiver) {
-			console.log('setting array ' , property , ' for ' , target , ' with value ' , value);
+			console.log('set array', target, property)
 			target[property] = value;
-			if( property != 'length' && typeof value === 'object'){
-				console.log('ok', target._pop_binders)
+			if( property !== 'length' && typeof value === 'object'){
 				value = DataObserver.data_parser(value);
-				for(var i in target._pop_binders[property]){
-					console.log(i)
+				for(var i in target._poppins){
+					target._poppins[i].p.render(target._poppins[i].e, value);
 				}
 			}
 			// you have to return true to accept the changes
@@ -101,17 +97,7 @@ var DataObserver = {
 		if(Array.isArray(o)){
 			
 			o = new Proxy(o, DataObserver.array_handler);
-			/*
-			Object.defineProperty(o, "push", {
-				configurable : true,
-				value: function(o){
-					[].push.call(this, o);
-					if ( typeof(o) == "object") {
-						o = DataObserver.data_parser(o);
-					}
-				}
-			});
-			*/
+
 		}else{
 			o = new Proxy(o, DataObserver.object_handler);
 			

@@ -63,13 +63,17 @@ var List = {
 	},
 	
 	rem : function(element, event){
+		console.log(List.items)
+		element.parentElement.remove();
+		console.log(List.items)
+		/*
 		for(i in this.data.list){
 			if(this.data.list[i].id == element.dataset.id){
 				this.data.list = this.data.list.slice(i, 1);
 				break;
 			}
 		}
-		
+		*/
 	}
 }
 
@@ -85,6 +89,6 @@ new Poppin('List', {
 
 });
 
-new Poppin('Item','<li data-id="{{id}}">{{content}}</li>');
+new Poppin('Item','<li data-id="{{id}}">{{content}} <a pop-fire="click:List.rem">X</a></li>');
 
 app.loadPop('List');
