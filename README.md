@@ -11,24 +11,23 @@ new Poppin('name', {
 	template : (mandatory) - DOM selector or HTML template,
 	app		 : (optional)  - app name or app object reference
 	data	 : (optional)  - JSON initial data
-	method	 : (optional)  - callable methods
 })
 
 
 # Few of ideas
 
- - A Poppin is a big or small DOM piece
+ - A Poppin is a component with a name, an HTML template and a JSON object as data.
  - A Poppin can to contain more other Poppins, so it can be contained by another.
- - A Poppin has a behaviors with data and method
+ - A Poppin is always into an App.
  - In a Poppin is possible bind a tag to a data and viceversa
- - A poppin template must have only a tag container. Other tags will be ignored
+ - A poppin template must have only a tag container. Other root tags will be ignored
  
 # HTML tag
 
- - <app name='xxx' />
+ - <app name='xxx'></app>
 	Define a App area. Poppins work only inside it
 	
- - <pop name="yyy" />
+ - <pop name="yyy"></pop>
 	Define a poppin place, by name 
  
 # HTML attributes
