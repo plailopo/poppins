@@ -8,14 +8,14 @@ var DataObserver = {
 		},
 		
 		set: function(obj, prop, value) {
-			
+			var i;
 			if(typeof value === 'object'){
 				value = DataObserver.data_parser(value);
-				for(var i in obj._pop_binders[prop]){
-					console.log(i)
+				for(i in obj._pop_binders[prop]){
+					//console.log(i)
 				}
 			}else{
-				for(var i in obj._pop_binders[prop]){
+				for(i in obj._pop_binders[prop]){
 					obj._pop_binders[prop][i].innerHTML = value;
 				}
 			}
@@ -27,20 +27,27 @@ var DataObserver = {
 	array_handler : {
 		
 		get: function(target, property) {
-			return target[property];
+			return Reflect.get(...arguments);
 		},
 		
 		set: function(target, property, value, receiver) {
-			console.log('set array', target, property)
-			target[property] = value;
-			if( property !== 'length' && typeof value === 'object'){
+			var i;
+			if( property != 'length' && typeof value === 'object'){
 				value = DataObserver.data_parser(value);
-				for(var i in target._poppins){
+				for(i in target._poppins){
 					target._poppins[i].p.render(target._poppins[i].e, value);
+				}
+			}else if( property == 'length' && typeof value === 'number'){
+				for(i in target._poppins){
+					var pointer = target._poppins[i].e.parentElement.children.length - value - 1;
+					var many = pointer;
+					for( many; many > 0; many--){
+						target._poppins[i].e.parentElement.children[pointer].remove();
+					}
 				}
 			}
 			// you have to return true to accept the changes
-			return true;
+			return Reflect.set(...arguments);
 		}
 		
 	},
@@ -59,14 +66,14 @@ var DataObserver = {
 		Object.defineProperty(o, "_addPoppin", {
 			configurable : false,
 			value: function(pop, elm){
-				this._poppins.push({p:pop, e:elm})
+				this._poppins.push({p:pop, e:elm});
 			}
 		});
 		
 		Object.defineProperty(o, "_getPoppin", {
 			configurable : false,
 			value: function(){
-				return this._poppins
+				return this._poppins;
 			}
 		});
 		
@@ -79,7 +86,6 @@ var DataObserver = {
 		Object.defineProperty(o, "_addBinder", {
 			configurable : false,
 			value: function(name, elm){
-				console.log(name, elm)
 				if( this._pop_binders[name] === undefined )
 					this._pop_binders[name] = [];
 				
@@ -90,7 +96,7 @@ var DataObserver = {
 		Object.defineProperty(o, "_getBinders", {
 			configurable : false,
 			value: function(){
-				return this._pop_binders
+				return this._pop_binders;
 			}
 		});
 		
@@ -111,5 +117,5 @@ var DataObserver = {
 		
 		return o;
 	}
-}
+};
 

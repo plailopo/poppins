@@ -55,7 +55,7 @@ class Poppin{
 	render(elm, data_ref){
 		
 		if(elm == null){
-			var elm = document.createElement('pop');
+			elm = document.createElement('pop');
 			elm.setAttribute('name', this.name);
 			this.app.e.appendChild(elm);
 		}
@@ -69,6 +69,8 @@ class Poppin{
 		var tmpElm = document.createElement('div');
 		tmpElm.innerHTML = html;
 		var node = tmpElm.firstChild;
+		node.poppin = this;
+		node.pop_data = data_ref;
 		elm.parentElement.insertBefore(node, elm.nextSibling);
 		
 		this.binder(node, data_ref);
@@ -108,19 +110,19 @@ class Poppin{
 					for(i in this.pop_fire){
 						if(this.pop_fire[i].event == ev.type){
 							
-							var fnc = Pop.getDataByString(window, this.pop_fire[i].action);
+							var fnc = Pop.getDataByString(this.pop_fire[i].action);
 							
 							if(typeof fnc == 'function'){
-								fnc(this, ev);
+								fnc(node.poppin, node.pop_data, this, ev);
 							}else{
-								Pop.setDataByString(this.pop.data, this.pop_fire[i].action, this.val());
+								Pop.setDataByString(this.pop_fire[i].action, this.val(), this.pop.data);
 							}
 							
 							break;
 						}
 					}
 					
-				})
+				});
 				
 			}
 
@@ -129,9 +131,9 @@ class Poppin{
 		// POP-BIND
 		// pop-bind="variable"
 		// when variable change, inner
-		var elms = node.querySelectorAll('[pop-bind]');
+		elms = node.querySelectorAll('[pop-bind]');
 		
-		for(var i=0; i< elms.length; i++){
+		for(i=0; i< elms.length; i++){
 			
 			var pathVar = data_ref;
 			var lastVar = elms[i].getAttribute('pop-bind');
@@ -139,7 +141,7 @@ class Poppin{
 			if(varSplitted.length > 1){
 				for(var l in varSplitted){
 					lastVar = varSplitted[l];
-					if(l < varSplitted.length-1) pathVar = Pop.getDataByString(pathVar, lastVar);
+					if(l < varSplitted.length-1) pathVar = Pop.getDataByString(lastVar, pathVar);
 				}
 			}
 			
@@ -156,7 +158,7 @@ class Poppin{
 		for(var i=0; i< elms.length; i++){
 			
 			var name = elms[i].getAttribute('name');
-			var dt = Pop.getDataByString(data_ref, elms[i].getAttribute('pop-data'));
+			var dt = Pop.getDataByString(elms[i].getAttribute('pop-data'), data_ref);
 			
 			var p = this.app.getPoppin(name);
 			

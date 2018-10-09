@@ -184,7 +184,7 @@ var Dialog = {
         if(typeof set.open == 'function'){
             set.open(d);
         }else if(typeof set.open == 'string'){
-            eval( set.open + "(d);" );
+			Pop.getDataByString(set.open)(d);
         }
 
         var openedDialog = document.querySelectorAll('.dialog.open');
@@ -202,6 +202,7 @@ var Dialog = {
     },
 
     close: function(){
+		
         var o = document.querySelector('.dialog.open.first');
         if( o == null || o.length == 0 ) return;
 
@@ -212,7 +213,7 @@ var Dialog = {
         if(typeof set.close == 'function'){
             set.close(o);
         }else if(typeof set.close == 'string'){
-            eval( set.close + "(o);" );
+			Pop.getDataByString(set.close)(o);
         }
 
         var openedDialog = document.querySelectorAll('.dialog.open');

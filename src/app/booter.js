@@ -5,19 +5,9 @@ Pop.apps = [];
 
 Pop.boot = function(){
 	
-	for( i in Pop.apps ){
+	for(var i in Pop.apps ){
 		Pop.apps[i].load();
 	}
-	
-	/*
-	Pop.doc_parser();
-	
-	for( i in Pop.poppins_waiting ){
-		Pop.poppins_waiting[i].load();
-	}
-	
-	Pop.poppins_waiting = [];
-	*/
 	
 };
 	
@@ -31,7 +21,7 @@ Pop.doc_parser = function(){
 	
 	if(app.length == 0){
 		var a = document.createElement("app"); 
-		a.setAttribute('name', 'app')
+		a.setAttribute('name', 'app');
 		document.body.appendChild(a);    
 		new App('app', a);
 	}
@@ -39,14 +29,14 @@ Pop.doc_parser = function(){
 };
 	
 Pop.addApp = function(a){
-	Pop.apps[a];
+	Pop.appspush(a);
 };
 	
 Pop.getApp = function(name){
 	if(name == null)
 		return Pop.apps[0];
 	
-	for(i in Pop.apps){
+	for( var i in Pop.apps){
 		if(Pop.apps[i].name == name) 
 			return Pop.apps[i];
 	}

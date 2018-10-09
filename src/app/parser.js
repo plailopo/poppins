@@ -30,7 +30,7 @@ var ParserHTML = {
 				}
 				
 				// data
-				var v = Pop.getDataByString(data, param);
+				var v = Pop.getDataByString(param, data);
 				var withTag = true;
 				var tmpPos = m.index - 1;
 				
@@ -57,4 +57,4 @@ var ParserHTML = {
 		
 		return html;
 	}
-}
+};

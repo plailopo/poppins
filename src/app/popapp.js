@@ -21,7 +21,7 @@ class PopApp{
 		oldTag.parentNode.replaceChild(this.e, oldTag);
 		this.loaded = 100;
 		
-		for( i in this.onLoad ){
+		for( var i in this.onLoad ){
 			this.loadPop(this.onLoad[i]);
 		}
 	}
@@ -39,7 +39,7 @@ class PopApp{
 	}
 	
 	getPoppin(name){
-		for(i in this.poppins){
+		for( var i in this.poppins){
 			if(this.poppins[i].name == name)
 				return this.poppins[i];
 		}

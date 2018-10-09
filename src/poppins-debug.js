@@ -20,7 +20,7 @@ var Log = {
 
         window.onerror = function(message, url, lineNumber) {
             Log.error(message +' '+ url + ' ('+lineNumber+')');
-            console.log(message +' '+ url + ' ('+lineNumber+')')
+            console.log(message +' '+ url + ' ('+lineNumber+')');
             return true;
         };
     },
@@ -51,4 +51,4 @@ var Log = {
     flush: function(){
         Log.Page.innerHTML = '<div class="right"><button class="btn" onclick="Log.flush()">flush</button></div>';
     }
-}
+};

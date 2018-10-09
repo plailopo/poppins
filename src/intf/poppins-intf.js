@@ -19,7 +19,7 @@ var Intf = {
             var str = window.location.hash.slice(1);
             if(str.length>2){
                 if(str.substring(0, 2) == "./"){
-                    eval( str.substring(2) + '()' );
+					Pop.getDataByString(str.substring(2))();
                 }else if(str.substring(0, 2) == "TV"){
                     Intf.toggleView(str.slice(2));
                 }else{
@@ -395,8 +395,7 @@ var Intf = {
         id.querySelectorAll('[data-value]').forEach(function(e){
             e.innerHTML = '';
             if(data.hasOwnProperty(e.dataset.value)){
-                eval('var val = data.' + e.dataset.value);
-                e.innerHTML = val;
+                e.innerHTML = Pop.getDataByString(e.dataset.value, data);
             }
         });
 
@@ -409,8 +408,7 @@ var Intf = {
 
         id.querySelectorAll('input, textarea, select').forEach(function(e){
             if(data.hasOwnProperty(e.name)){
-                eval('var val = data.' + e.name);
-                e.val(val);
+                e.val(Pop.getDataByString(e.name, data));
             }
         });
 

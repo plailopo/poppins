@@ -1,5 +1,7 @@
 
-Pop.getDataByString = function(obj, s) {
+Pop.getDataByString = function(s, obj) {
+
+	if(obj == null) obj = window;
 
     var keys = s.split(".");
 
@@ -13,9 +15,11 @@ Pop.getDataByString = function(obj, s) {
     }
 
     return obj;
-}
+};
 
-Pop.setDataByString = function(obj, s, val) {
+Pop.setDataByString = function(s, val, obj) {
+	
+	if(obj == null) obj = window;
 	
 	var str = '';
     var keys = s.split(".");
@@ -41,7 +45,7 @@ Pop.setDataByString = function(obj, s, val) {
 	
 	obj = Pop.extend(obj, JSON.parse(str));
     
-}
+};
 
 Pop.extend = function(){
 	for(var i=1; i<arguments.length; i++)

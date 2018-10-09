@@ -30,6 +30,7 @@ module.exports = function(grunt) {
       options: {
         // options here to override JSHint defaults
 		esversion: 6,
+		multistr: true,
         globals: {
           console: true,
           module: true,

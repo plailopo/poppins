@@ -13,7 +13,7 @@ var d = {
 	user : {
 		nickname : 'Zio'
 	}
-}
+};
 
 // Hello your nickname
 new Poppin('HelloZio', {
@@ -56,26 +56,33 @@ var List = {
 		{id: 3, content : 'Zio 3'}
 	],
 			
-	add : function(element, event){
-		console.log('Lista:', List.items)
-		List.items.push({id: new Date().getTime(), content: element.val()});
+	add : function(poppin, data, element, event){
+		
+		if(true) // By data
+			data.items.push(  {id: new Date().getTime(), content: element.val()}  );
+		else // By List
+			List.items.push(  {id: new Date().getTime(), content: element.val()}  );
 		element.val('');
 	},
 	
-	rem : function(element, event){
-		console.log(List.items)
-		element.parentElement.remove();
-		console.log(List.items)
-		/*
-		for(i in this.data.list){
-			if(this.data.list[i].id == element.dataset.id){
-				this.data.list = this.data.list.slice(i, 1);
-				break;
+	rem : function(poppin, data, element, event){
+		
+		if(true){
+			// Remove by element
+			element.closest('li').remove();
+		}else{
+			// Remove by data
+			var id = element.closest('li').pop_data.id;
+			for(var i in List.items){
+				if(List.items[i].id == id){
+					List.items.splice(i, 1);
+					break;
+				}
 			}
 		}
-		*/
+		console.log('Items list', List.items.length);
 	}
-}
+};
 
 new Poppin('List', {
 	
@@ -89,6 +96,7 @@ new Poppin('List', {
 
 });
 
-new Poppin('Item','<li data-id="{{id}}">{{content}} <a pop-fire="click:List.rem">X</a></li>');
+new Poppin('Item','<li data-id="{{id}}">{{content}} (<a href="javascript:void(0);" pop-fire="click:List.rem">x</a>)</li>');
 
 app.loadPop('List');
+

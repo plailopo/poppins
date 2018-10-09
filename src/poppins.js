@@ -8,4 +8,4 @@ window.onload = function() {
 };
 
 
-var Pop = {}
+var Pop = {};
