@@ -18,6 +18,15 @@ Element.prototype.hasClass = function(c) {
     return this.className.match(re);
 };
 
+Element.prototype.toggleClass = function(c) {
+	if(this.hasClass(c)){
+		this.removeClass(c);
+	}else{
+		this.addClass(c);
+	}
+    return this;
+};
+
 Element.prototype.remove = function() {
     this.parentElement.removeChild(this);
     return this;
@@ -26,7 +35,6 @@ Element.prototype.remove = function() {
 Element.prototype.val = function(v) {
     var form = this.closest('form');
     var i = 0;
-	
 	
     if(this.tagName.toLowerCase() == 'input'){
 		

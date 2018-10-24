@@ -7,6 +7,8 @@ var ParserHTML = {
 	
 	html_by_template : function(tmpl, data){
 			
+		tmpl = tmpl.trim();
+		
 		var html = '';
 		
 		var m;

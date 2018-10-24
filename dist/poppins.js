@@ -87,6 +87,15 @@ Element.prototype.hasClass = function(c) {
     return this.className.match(re);
 };
 
+Element.prototype.toggleClass = function(c) {
+	if(this.hasClass(c)){
+		this.removeClass(c);
+	}else{
+		this.addClass(c);
+	}
+    return this;
+};
+
 Element.prototype.remove = function() {
     this.parentElement.removeChild(this);
     return this;
@@ -95,7 +104,6 @@ Element.prototype.remove = function() {
 Element.prototype.val = function(v) {
     var form = this.closest('form');
     var i = 0;
-	
 	
     if(this.tagName.toLowerCase() == 'input'){
 		
@@ -853,11 +861,22 @@ var Mob = {
         }
     }
 };;
+Pop.load = 0; // 1 parsed, 2 complete
 
-Pop.load = 0;
 Pop.apps = [];
+Pop.waiting_poppins = [];
 
 Pop.boot = function(){
+	
+	Pop.doc_app_parser();
+	
+	Pop.doc_pop_parser();
+	
+	Pop.load = 1;
+	
+	for(var p in Pop.waiting_poppins){
+		Pop.waiting_poppins[p].load();
+	}
 	
 	for(var i in Pop.apps ){
 		Pop.apps[i].load();
@@ -865,33 +884,77 @@ Pop.boot = function(){
 	
 };
 	
-Pop.doc_parser = function(){
+Pop.doc_app_parser = function(){
 		
-	var app = document.querySelectorAll('app');
+	var apps = document.querySelectorAll('app');
+	var i;
 	
-	for(var i=0; i< app.length; i++){
-		new App(app[i].getAttribute('name'), app[i]);
+	for(i=0; i< apps.length; i++){
+		
+		var app_id = apps[i].getAttribute('id');
+		if(app_id == undefined || app_id.length == 0 ){
+			console.error("App without identifier")
+			continue;
+		}
+		
+		var already_exist = false;
+		for(a in Pop.apps){
+			if(Pop.apps[a].id == app_id){
+				already_exist = true;
+				break;
+			}
+		}
+		if(already_exist) continue;
+		
+		
+		if( Pop.apps[app_id] == undefined )
+			new PopApp(app_id);
+		
+	}
+		
+};
+
+Pop.doc_pop_parser = function(){
+	
+	var pops = document.querySelectorAll('pop');
+	
+	for(i=0; i< pops.length; i++){
+		
+		var pop_id = pops[i].getAttribute('id');
+		if(pop_id == undefined || pop_id.length == 0) {
+			console.error("Pop without identifier")
+			continue;
+		}
+		
+		var app_id = pops[i].getAttribute('app');
+		if(app_id == null){
+			app_id = pops[i].closest('app').getAttribute('id');
+		}
+		
+		var tmp_data = pops[i].getAttribute('data');
+		var d = tmp_data != undefined ? Pop.getDataByString(tmp_data) : {};
+		
+		new Poppin(pop_id, {
+	
+			app : app_id,
+			template : pops[i].innerHTML,
+			data : d
+
+		});
 	}
 	
-	if(app.length == 0){
-		var a = document.createElement("app"); 
-		a.setAttribute('name', 'app');
-		document.body.appendChild(a);    
-		new App('app', a);
-	}
-		
 };
 	
 Pop.addApp = function(a){
 	Pop.appspush(a);
 };
 	
-Pop.getApp = function(name){
-	if(name == null)
+Pop.getApp = function(id){
+	if(id == null)
 		return Pop.apps[0];
 	
 	for( var i in Pop.apps){
-		if(Pop.apps[i].name == name) 
+		if(Pop.apps[i].id == id) 
 			return Pop.apps[i];
 	}
 };
@@ -1030,6 +1093,8 @@ var ParserHTML = {
 	
 	html_by_template : function(tmpl, data){
 			
+		tmpl = tmpl.trim();
+		
 		var html = '';
 		
 		var m;
@@ -1084,9 +1149,9 @@ var ParserHTML = {
 
 class Poppin{
 
-    constructor(name, tmplt, options){
+    constructor(id, tmplt, options){
 		
-		this.name = name;
+		this.id = id;
 		
 		if( typeof tmplt == 'string' ){
 			
@@ -1100,27 +1165,30 @@ class Poppin{
 		
 		}else if( typeof tmplt == 'object' ){
 		
-			this.app_refer = tmplt.app;
+			this.app = tmplt.app;
 			this.template = tmplt.template;
 			this.data = tmplt.data;
 			
 		}else{
 			
-			console.log('Poppin without options ' + this.name + '... Nothing to do!');
+			console.log('Poppin without options ' + this.id + '... Nothing to do!');
 			return;
 			
 		}
 		
-		this.load();
+		if( Pop.load ){
+			this.load();
+		}else{
+			Pop.waiting_poppins.push(this);
+		}
+		
 		
 	}
 	
 	load(){
 		
-		if(typeof this.app_refer == 'string'){
-			this.app = Pop.getApp(this.app_refer);
-		}else if(typeof this.app_refer == 'object'){
-			this.app = this.app_refer;
+		if(typeof this.app == 'string'){
+			this.app = Pop.getApp(this.app);
 		}else{
 			this.app = Pop.getApp();
 		}
@@ -1130,6 +1198,8 @@ class Poppin{
 		
 		DataObserver.data_parser(this.data);
 		
+		console.log('Poppin ', this.id, 'loaded', this)
+		
 		this.app.addPoppin(this);
 		
 	}
@@ -1138,9 +1208,11 @@ class Poppin{
 		
 		if(elm == null){
 			elm = document.createElement('pop');
-			elm.setAttribute('name', this.name);
+			elm.setAttribute('id', this.id);
 			this.app.e.appendChild(elm);
 		}
+		
+		console.log('render ', this.id, 'into', elm, 'with data', data_ref);
 		
 		if(data_ref == null){
 			data_ref = this.data;
@@ -1154,6 +1226,7 @@ class Poppin{
 		node.poppin = this;
 		node.pop_data = data_ref;
 		elm.parentElement.insertBefore(node, elm.nextSibling);
+		elm.innerHTML = '';
 		
 		this.binder(node, data_ref);
 		
@@ -1239,10 +1312,11 @@ class Poppin{
 		
 		for(var i=0; i< elms.length; i++){
 			
-			var name = elms[i].getAttribute('name');
-			var dt = Pop.getDataByString(elms[i].getAttribute('pop-data'), data_ref);
+			var id = elms[i].getAttribute('id');
+			var pop_data = elms[i].getAttribute('pop-data') != null ? elms[i].getAttribute('pop-data') : '';
+			var dt = Pop.getDataByString(pop_data, data_ref);
 			
-			var p = this.app.getPoppin(name);
+			var p = this.app.getPoppin(id);
 			
 			if( Array.isArray(dt) ){
 				dt._addPoppin(p, elms[i]);
@@ -1263,35 +1337,42 @@ class Poppin{
 
 class PopApp{
 	
-    constructor(name, onLoad){
+    constructor(id, onLoad){
 		
 		this.loaded = 0;
-		this.name = name;
+		this.id = id;
 		this.onLoad = onLoad != null ? onLoad : [];
 		this.poppins = [];
 		
 		Pop.apps.push(this);
-
+		
 	}
 	
 	load(){
-		var oldTag = document.querySelector('app#'+this.name);
+		
+		var oldTag = document.querySelector('app#'+this.id);
 		this.e = document.createElement('div');
 		this.e.innerHTML = oldTag.innerHTML;
-		this.e.setAttribute('pop-app', this.name);
+		this.e.setAttribute('pop-app', this.id);
 		oldTag.parentNode.replaceChild(this.e, oldTag);
 		this.loaded = 100;
 		
+		var poppese = this.e.querySelectorAll('pop');
+
+		[].forEach.call(poppese, function(p) {
+			p.remove();
+		});
+				
 		for( var i in this.onLoad ){
 			this.loadPop(this.onLoad[i]);
 		}
 	}
 	
-	loadPop(name){
+	loadPop(id){
 		if(this.loaded < 100){
-			this.onLoad.push(name);
+			this.onLoad.push(id);
 		}else{
-			this.getPoppin(name).render();
+			this.getPoppin(id).render();
 		}
 	}
 	
@@ -1299,9 +1380,9 @@ class PopApp{
 		this.poppins.push(pop);
 	}
 	
-	getPoppin(name){
+	getPoppin(id){
 		for( var i in this.poppins){
-			if(this.poppins[i].name == name)
+			if(this.poppins[i].id == id)
 				return this.poppins[i];
 		}
 		return null;

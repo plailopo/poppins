@@ -72,7 +72,7 @@ var List = {
 			element.closest('li').remove();
 		}else{
 			// Remove by data
-			var id = element.closest('li').pop_data.id;
+			var id = data.id;
 			for(var i in List.items){
 				if(List.items[i].id == id){
 					List.items.splice(i, 1);
@@ -81,6 +81,10 @@ var List = {
 			}
 		}
 		console.log('Items list', List.items.length);
+	},
+	
+	change_class : function(poppin, data, element, event){
+		element.closest('li').toggleClass('ciccio');
 	}
 };
 
@@ -96,7 +100,7 @@ new Poppin('List', {
 
 });
 
-new Poppin('Item','<li data-id="{{id}}">{{content}} (<a href="javascript:void(0);" pop-fire="click:List.rem">x</a>)</li>');
+new Poppin('Item','<li data-id="{{id}}">{{content}} (<a href="javascript:void(0);" pop-fire="click:List.rem;mouseenter:List.change_class;mouseout:List.change_class">x</a>)</li>');
 
 app.loadPop('List');
 

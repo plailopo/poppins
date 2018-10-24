@@ -2,9 +2,9 @@
 
 class Poppin{
 
-    constructor(name, tmplt, options){
+    constructor(id, tmplt, options){
 		
-		this.name = name;
+		this.id = id;
 		
 		if( typeof tmplt == 'string' ){
 			
@@ -18,27 +18,30 @@ class Poppin{
 		
 		}else if( typeof tmplt == 'object' ){
 		
-			this.app_refer = tmplt.app;
+			this.app = tmplt.app;
 			this.template = tmplt.template;
 			this.data = tmplt.data;
 			
 		}else{
 			
-			console.log('Poppin without options ' + this.name + '... Nothing to do!');
+			console.log('Poppin without options ' + this.id + '... Nothing to do!');
 			return;
 			
 		}
 		
-		this.load();
+		if( Pop.load ){
+			this.load();
+		}else{
+			Pop.waiting_poppins.push(this);
+		}
+		
 		
 	}
 	
 	load(){
 		
-		if(typeof this.app_refer == 'string'){
-			this.app = Pop.getApp(this.app_refer);
-		}else if(typeof this.app_refer == 'object'){
-			this.app = this.app_refer;
+		if(typeof this.app == 'string'){
+			this.app = Pop.getApp(this.app);
 		}else{
 			this.app = Pop.getApp();
 		}
@@ -48,6 +51,8 @@ class Poppin{
 		
 		DataObserver.data_parser(this.data);
 		
+		console.log('Poppin ', this.id, 'loaded', this)
+		
 		this.app.addPoppin(this);
 		
 	}
@@ -56,9 +61,11 @@ class Poppin{
 		
 		if(elm == null){
 			elm = document.createElement('pop');
-			elm.setAttribute('name', this.name);
+			elm.setAttribute('id', this.id);
 			this.app.e.appendChild(elm);
 		}
+		
+		console.log('render ', this.id, 'into', elm, 'with data', data_ref);
 		
 		if(data_ref == null){
 			data_ref = this.data;
@@ -72,6 +79,7 @@ class Poppin{
 		node.poppin = this;
 		node.pop_data = data_ref;
 		elm.parentElement.insertBefore(node, elm.nextSibling);
+		elm.innerHTML = '';
 		
 		this.binder(node, data_ref);
 		
@@ -157,10 +165,11 @@ class Poppin{
 		
 		for(var i=0; i< elms.length; i++){
 			
-			var name = elms[i].getAttribute('name');
-			var dt = Pop.getDataByString(elms[i].getAttribute('pop-data'), data_ref);
+			var id = elms[i].getAttribute('id');
+			var pop_data = elms[i].getAttribute('pop-data') != null ? elms[i].getAttribute('pop-data') : '';
+			var dt = Pop.getDataByString(pop_data, data_ref);
 			
-			var p = this.app.getPoppin(name);
+			var p = this.app.getPoppin(id);
 			
 			if( Array.isArray(dt) ){
 				dt._addPoppin(p, elms[i]);
