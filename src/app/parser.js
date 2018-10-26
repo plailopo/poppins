@@ -6,10 +6,12 @@ var ParserHTML = {
 	
 	
 	html_by_template : function(tmpl, data){
-			
-		tmpl = tmpl.trim();
 		
 		var html = '';
+
+		if(tmpl == null || tmpl.length == 0) return html;
+	
+		tmpl = tmpl.trim();
 		
 		var m;
 		var pointer = 0;

@@ -8,7 +8,7 @@ module.exports = function(grunt) {
         separator: ';'
       },
       dist: {
-        src: ['src/poppins.js', 'src/jsext/*.js', 'src/dom/*.js', 'src/intf/*.js', 'src/mobile/*.js', 'src/app/*.js'],
+        src: ['src/poppins-debug.js', 'src/poppins.js', 'src/jsext/*.js', 'src/dom/*.js', 'src/intf/*.js', 'src/mobile/*.js', 'src/app/*.js'],
         dest: 'dist/<%= pkg.name %>.js'
       }
     },

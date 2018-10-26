@@ -1,12 +1,14 @@
 
+Log.add_category('APP', Log.LEVEL_DEBUG, true, true);
+Log.add_category('POPPIN', Log.LEVEL_INFO, true, true);
 
 // Create APP
 var app = new PopApp('demo');
 
 
 // Helo world
-new Poppin( 'HelloWorld', '<h2>Hello Horld</h2>');
-app.loadPop('HelloWorld');
+new Poppin( 'CiaoWorld', '<div><h2>Ciao mondo</h2><hr /></div>');
+app.loadPop('CiaoWorld');
 
 
 var d = {
@@ -15,25 +17,27 @@ var d = {
 	}
 };
 
-// Hello your nickname
-new Poppin('HelloZio', {
+// Ciao your nickname
+new Poppin('CiaoZio', {
 	
 	app : 'demo',
 	template : '<div>\
-		<h2>Hello {{user.nickname}}</h2>\
+		<h2>Ciao {{user.nickname}}</h2>\
 		<input pop-fire="keyup:user.nickname" value="{{user.nickname}}" />\
+		<hr />\
 	</div>',
 	
 	data : d
 
 });
-app.loadPop('HelloZio');
+app.loadPop('CiaoZio');
 
 
 // Sub poppin
-new Poppin('HelloSub', '<div>\
-			<pop name="SubPop" pop-data="user"></pop>\
+new Poppin('CiaoSub', '<div>\
+			<pop id="SubPop" pop-data="user"></pop>\
 			<input pop-fire="keyup:user.nickname" value="{{user.nickname}}" />\
+			<hr />\
 		</div>',
 	{
 		user : {
@@ -41,8 +45,8 @@ new Poppin('HelloSub', '<div>\
 		}
 	});
 	
-new Poppin('SubPop','<h2>Hello with sub Poppin: {{nickname}}</h2>');
-app.loadPop('HelloSub');
+new Poppin('SubPop','<h2>Ciao con sub Poppin: {{nickname}}</h2>');
+app.loadPop('CiaoSub');
 
 
 // TODO LIST
@@ -80,7 +84,7 @@ var List = {
 				}
 			}
 		}
-		console.log('Items list', List.items.length);
+		Log.debug('APP', 'Items list', List.items.length);
 	},
 	
 	change_class : function(poppin, data, element, event){
@@ -93,8 +97,8 @@ new Poppin('List', {
 	template : '<div><h2>Todo List</h2>\
 				<input pop-fire="change:List.add" />\
 				<ul>\
-					<pop name="Item" pop-data="items"></pop>\
-				</ul></div>',
+					<pop id="Item" pop-data="items"></pop>\
+				</ul><hr /></div>',
 	
 	data : List
 

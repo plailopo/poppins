@@ -1,3 +1,6 @@
+/*
+  Poppin boot
+*/
 
 Pop.load = 0; // 1 parsed, 2 complete
 
@@ -16,6 +19,8 @@ Pop.boot = function(){
 		Pop.waiting_poppins[p].load();
 	}
 	
+	Log.info('POPPIN', '################# Poppins LOADED');
+
 	for(var i in Pop.apps ){
 		Pop.apps[i].load();
 	}
@@ -35,18 +40,12 @@ Pop.doc_app_parser = function(){
 			continue;
 		}
 		
-		var already_exist = false;
 		for(a in Pop.apps){
 			if(Pop.apps[a].id == app_id){
-				already_exist = true;
+				// ...
 				break;
 			}
 		}
-		if(already_exist) continue;
-		
-		
-		if( Pop.apps[app_id] == undefined )
-			new PopApp(app_id);
 		
 	}
 		
@@ -68,17 +67,15 @@ Pop.doc_pop_parser = function(){
 		if(app_id == null){
 			app_id = pops[i].closest('app').getAttribute('id');
 		}
-		
-		var tmp_data = pops[i].getAttribute('data');
-		var d = tmp_data != undefined ? Pop.getDataByString(tmp_data) : {};
-		
-		new Poppin(pop_id, {
-	
-			app : app_id,
-			template : pops[i].innerHTML,
-			data : d
 
-		});
+		var app = Pop.getApp(app_id);
+		if(app == null) continue;
+		
+		var pop = app.getPoppin(pop_id);
+		if(pop == null) continue;
+		
+		pop.template = pops[i].innerHTML;
+		
 	}
 	
 };

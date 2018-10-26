@@ -12,7 +12,7 @@ var DataObserver = {
 			if(typeof value === 'object'){
 				value = DataObserver.data_parser(value);
 				for(i in obj._pop_binders[prop]){
-					//console.log(i)
+					// ... 
 				}
 			}else{
 				for(i in obj._pop_binders[prop]){
@@ -35,7 +35,10 @@ var DataObserver = {
 			if( property != 'length' && typeof value === 'object'){
 				value = DataObserver.data_parser(value);
 				for(i in target._poppins){
-					target._poppins[i].p.render(target._poppins[i].e, value);
+					var elem_cursor = document.createElement('pop');
+					elem_cursor.setAttribute('id', target._poppins[i].p.id);
+					target._poppins[i].e.appendChild(elem_cursor);
+					target._poppins[i].p.render(elem_cursor, value);
 				}
 			}else if( property == 'length' && typeof value === 'number'){
 				for(i in target._poppins){

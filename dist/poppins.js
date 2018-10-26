@@ -1,5 +1,170 @@
 
 
+var Log = {
+
+    _category : [],
+
+    LEVEL_DEBUG     : 0,
+    LEVEL_INFO      : 1,
+    LEVEL_WARNING   : 2,
+    LEVEL_ERROR     : 3,
+    LEVEL_SHUTDOWN  : -1,
+
+    Page : false,
+
+    start : function(){
+
+        Log.Page = document.createElement("div");
+        Log.Page.style.cssText = 'position:absolute;left:0;top:0;width:100%;min-height:1400px;z-index:9999999;background:#222222;';
+        Log.Page.className = 'hidden';
+        document.getElementsByTagName("BODY")[0].appendChild(Log.Page);
+
+        var lnk = document.createElement("a");
+        lnk.style.cssText = 'position:absolute;left:50%;top:0;z-index:9999999;color:#dd0000;padding:2px;width:100px;text-align:center;margin-left:-50px;';
+        lnk.innerText = 'debug';
+        lnk.addEventListener('click', Log.toggle);
+        document.getElementsByTagName("BODY")[0].appendChild(lnk);
+
+        Log.flush();
+
+        window.onerror = function(message, url, lineNumber) {
+            Log.error(message +' '+ url + ' ('+lineNumber+')');
+            console.log(message +' '+ url + ' ('+lineNumber+')');
+            return true;
+        };
+    },
+
+    add_category: function(id, level, c, p){
+        Log._category.push({id:id, level:level, console:c, page:p});
+    },
+
+    /*
+        Write a log
+    */
+    write: function(){
+
+        if(arguments.length < 3) return;
+
+        var level = Log.LEVEL_SHUTDOWN;
+        if(typeof arguments[0] == 'number'){
+            level = arguments[0];
+        }
+
+        var level_name = 'ERROR';
+        if(level == Log.LEVEL_DEBUG) level_name = 'DEBUG';
+        else if(level == Log.LEVEL_INFO) level_name = 'INFO';
+        else if(level == Log.LEVEL_WARNING) level_name = 'WARN';
+
+        var cat = null;
+        var found_cat = false;
+        if(typeof arguments[1] == 'string'){
+            for(var c in Log._category){
+                if(Log._category[c].id == arguments[1]){
+                    found_cat = true;
+                    if(level >= Log._category[c].level){
+                        cat = Log._category[c];
+                    }
+                }
+            }
+        }
+        
+        if(!found_cat){
+            console.error('Log category not configured: ', arguments[1]);
+        }
+
+        if( cat==null && Log._category.length>0) return;
+
+        // Console log
+        if(cat.console){
+            var args = [level_name + ' - ' + cat.id];
+            for(var i in arguments){
+                if(i<2) continue;
+                args.push(arguments[i]);
+            }
+            if(level == Log.LEVEL_ERROR){
+                console.error.apply(this, args);
+            }else{
+                
+                console.log.apply(this, args);
+            }
+        }
+
+        // Page log
+        if(cat.page && Log.Page !== false){
+
+            var msg = level_name + ' - ' + arguments[2];
+            if(arguments.length > 3) for(var m=3; m<arguments.length; m++){
+                msg += arguments[m];
+            }
+
+            if(level == Log.LEVEL_ERROR){
+                Log.Page.innerHTML += '<div style="color:#dd0000;margin:2px 2px 6px 2px;"> - ' + msg + '</div>';
+            }else if(level == Log.LEVEL_WARN){
+                Log.Page.innerHTML += '<div style="color:#ff9900;margin:2px 2px 6px 2px;"> - ' + msg + '</div>';
+            }else if(level == Log.LEVEL_INFO){
+                Log.Page.innerHTML += '<div style="color:#4da6ff;margin:2px 2px 6px 2px;"> - ' + msg + '</div>';
+            }else if(level == Log.LEVEL_DEBUG){
+                Log.Page.innerHTML += '<div style="color:#f4f4f4;margin:2px 2px 6px 2px;"> - ' + msg + '</div>';
+            }
+        }
+    },
+
+    error: function(cat){
+        var args = [Log.LEVEL_ERROR, cat];
+        for(var i in arguments){
+            if(i==0) continue;
+            args.push(arguments[i]);
+        }
+        Log.write.apply(this, args);
+    },
+
+    warn: function(cat){
+        var args = [Log.LEVEL_WARN, cat];
+        for(var i in arguments){
+            if(i==0) continue;
+            args.push(arguments[i]);
+        }
+        Log.write.apply(this, args);
+    },
+
+    info: function(cat){
+        var args = [Log.LEVEL_INFO, cat];
+        for(var i in arguments){
+            if(i==0) continue;
+            args.push(arguments[i]);
+        }
+        Log.write.apply(this, args);
+    },
+
+    debug: function(cat){
+        var args = [Log.LEVEL_DEBUG, cat];
+        for(var i in arguments){
+            if(i==0) continue;
+            args.push(arguments[i]);
+        }
+        Log.write.apply(this, args);
+    },
+
+    open: function(){
+        Log.Page.removeClass('hidden');
+    },
+
+    close: function(){
+        Log.Page.addClass('hidden');
+    },
+
+    toggle: function(){
+        if(Log.Page.hasClass('hidden'))
+            Log.Page.removeClass('hidden');
+        else
+            Log.Page.addClass('hidden');
+    },
+
+    flush: function(){
+        Log.Page.innerHTML = '<div class="right"><button class="btn" onclick="Log.flush()">flush</button></div>';
+    }
+};;
+
 window.onload = function() {
     Pop.boot();
 	Intf.init();
@@ -860,7 +1025,10 @@ var Mob = {
             return positionObject;
         }
     }
-};;
+};;/*
+  Poppin boot
+*/
+
 Pop.load = 0; // 1 parsed, 2 complete
 
 Pop.apps = [];
@@ -878,6 +1046,8 @@ Pop.boot = function(){
 		Pop.waiting_poppins[p].load();
 	}
 	
+	Log.info('POPPIN', '################# Poppins LOADED');
+
 	for(var i in Pop.apps ){
 		Pop.apps[i].load();
 	}
@@ -897,18 +1067,12 @@ Pop.doc_app_parser = function(){
 			continue;
 		}
 		
-		var already_exist = false;
 		for(a in Pop.apps){
 			if(Pop.apps[a].id == app_id){
-				already_exist = true;
+				// ...
 				break;
 			}
 		}
-		if(already_exist) continue;
-		
-		
-		if( Pop.apps[app_id] == undefined )
-			new PopApp(app_id);
 		
 	}
 		
@@ -930,17 +1094,15 @@ Pop.doc_pop_parser = function(){
 		if(app_id == null){
 			app_id = pops[i].closest('app').getAttribute('id');
 		}
-		
-		var tmp_data = pops[i].getAttribute('data');
-		var d = tmp_data != undefined ? Pop.getDataByString(tmp_data) : {};
-		
-		new Poppin(pop_id, {
-	
-			app : app_id,
-			template : pops[i].innerHTML,
-			data : d
 
-		});
+		var app = Pop.getApp(app_id);
+		if(app == null) continue;
+		
+		var pop = app.getPoppin(pop_id);
+		if(pop == null) continue;
+		
+		pop.template = pops[i].innerHTML;
+		
 	}
 	
 };
@@ -977,7 +1139,7 @@ var DataObserver = {
 			if(typeof value === 'object'){
 				value = DataObserver.data_parser(value);
 				for(i in obj._pop_binders[prop]){
-					//console.log(i)
+					// ... 
 				}
 			}else{
 				for(i in obj._pop_binders[prop]){
@@ -1000,7 +1162,10 @@ var DataObserver = {
 			if( property != 'length' && typeof value === 'object'){
 				value = DataObserver.data_parser(value);
 				for(i in target._poppins){
-					target._poppins[i].p.render(target._poppins[i].e, value);
+					var elem_cursor = document.createElement('pop');
+					elem_cursor.setAttribute('id', target._poppins[i].p.id);
+					target._poppins[i].e.appendChild(elem_cursor);
+					target._poppins[i].p.render(elem_cursor, value);
 				}
 			}else if( property == 'length' && typeof value === 'number'){
 				for(i in target._poppins){
@@ -1092,10 +1257,12 @@ var ParserHTML = {
 	
 	
 	html_by_template : function(tmpl, data){
-			
-		tmpl = tmpl.trim();
 		
 		var html = '';
+
+		if(tmpl == null || tmpl.length == 0) return html;
+	
+		tmpl = tmpl.trim();
 		
 		var m;
 		var pointer = 0;
@@ -1145,7 +1312,8 @@ var ParserHTML = {
 		
 		return html;
 	}
-};;;
+};
+;;
 
 class Poppin{
 
@@ -1171,10 +1339,18 @@ class Poppin{
 			
 		}else{
 			
-			console.log('Poppin without options ' + this.id + '... Nothing to do!');
+			Log.debug('POPPIN', 'Poppin without options ' + this.id + '... Nothing to do!');
 			return;
 			
 		}
+
+		if(typeof this.app == 'string'){
+			this.app = Pop.getApp(this.app);
+		}else{
+			this.app = Pop.getApp();
+		}
+
+		this.app.addPoppin(this);
 		
 		if( Pop.load ){
 			this.load();
@@ -1187,47 +1363,47 @@ class Poppin{
 	
 	load(){
 		
-		if(typeof this.app == 'string'){
-			this.app = Pop.getApp(this.app);
-		}else{
-			this.app = Pop.getApp();
-		}
-		
 		if(this.data === undefined)
 			this.data = {};
 		
 		DataObserver.data_parser(this.data);
 		
-		console.log('Poppin ', this.id, 'loaded', this)
-		
-		this.app.addPoppin(this);
+		Log.debug('POPPIN', 'Poppin "' + this.id + '" loaded', this);
 		
 	}
 	
-	render(elm, data_ref){
+	render(elem_cursor, data_ref){
 		
-		if(elm == null){
-			elm = document.createElement('pop');
-			elm.setAttribute('id', this.id);
-			this.app.e.appendChild(elm);
+		//se non viene passato l'elemento cursore lo creo
+		if(elem_cursor == null){
+			elem_cursor = document.createElement('pop');
+			elem_cursor.setAttribute('id', this.id);
+			this.app.e.appendChild(elem_cursor);
 		}
 		
-		console.log('render ', this.id, 'into', elm, 'with data', data_ref);
-		
+		// Se non passati i dati ci appiccico quelli del pop
 		if(data_ref == null){
 			data_ref = this.data;
 		}
-		
+
+		Log.debug('POPPIN', '### rendering Pop ' , this.id);
+		Log.debug('POPPIN', 'Parent', parent);
+		Log.debug('POPPIN', 'Data', data_ref);
+
 		var html = ParserHTML.html_by_template(this.template, data_ref);
 		
 		var tmpElm = document.createElement('div');
 		tmpElm.innerHTML = html;
+		Log.debug('POPPIN', 'Tmpl elem', tmpElm);
 		var node = tmpElm.firstChild;
+		if(node == null) return;
 		node.poppin = this;
 		node.pop_data = data_ref;
-		elm.parentElement.insertBefore(node, elm.nextSibling);
-		elm.innerHTML = '';
-		
+		Log.debug('POPPIN', 'Node', node);
+
+		elem_cursor.parentElement.insertBefore(node, elem_cursor.nextSibling);
+		elem_cursor.remove();
+
 		this.binder(node, data_ref);
 		
 		data_ref._addPoppin(this, node);
@@ -1313,36 +1489,54 @@ class Poppin{
 		for(var i=0; i< elms.length; i++){
 			
 			var id = elms[i].getAttribute('id');
-			var pop_data = elms[i].getAttribute('pop-data') != null ? elms[i].getAttribute('pop-data') : '';
-			var dt = Pop.getDataByString(pop_data, data_ref);
-			
+
 			var p = this.app.getPoppin(id);
+			var pop_data = elms[i].getAttribute('pop-data') != null ? elms[i].getAttribute('pop-data') : null;
+
+			if(p == null) continue;
 			
-			if( Array.isArray(dt) ){
-				dt._addPoppin(p, elms[i]);
-				
-				for(var l = 0; l < dt.length; l++){
-					p.render(elms[i], dt[l]);
+			var dt = p.data;
+			if(pop_data != null)
+				dt = Pop.getDataByString(pop_data, data_ref);
+
+			Log.debug('POPPIN', 'go sub render', id, dt, pop_data)
+
+			if(p != null){
+				if( Array.isArray(dt) ){
+					
+					dt._addPoppin(p, elms[i].parentElement);
+					
+					for(var l = 0; l < dt.length; l++){
+						var elm_cursor = elms[i];
+						if(l < dt.length-1){
+							elm_cursor = elms[i].cloneNode(true);
+							elms[i].parentElement.appendChild(elm_cursor);
+						}
+						p.render(elm_cursor, dt[l]);
+					}
+				}else{
+					p.render(elms[i], dt);
 				}
-				
-			}else{
-				p.render(elms[i], dt);
 			}
 			
 		}
 		
 	}
 
-};
+}
+;
 
 class PopApp{
 	
-    constructor(id, onLoad){
+    	constructor(id, onLoad){
 		
 		this.loaded = 0;
 		this.id = id;
 		this.onLoad = onLoad != null ? onLoad : [];
 		this.poppins = [];
+
+		var appElm = document.querySelector('app#'+this.id);
+		if(appElm) appElm.style.display = 'none';
 		
 		Pop.apps.push(this);
 		
@@ -1362,7 +1556,7 @@ class PopApp{
 		[].forEach.call(poppese, function(p) {
 			p.remove();
 		});
-				
+		
 		for( var i in this.onLoad ){
 			this.loadPop(this.onLoad[i]);
 		}
@@ -1372,7 +1566,8 @@ class PopApp{
 		if(this.loaded < 100){
 			this.onLoad.push(id);
 		}else{
-			this.getPoppin(id).render();
+			var p = this.getPoppin(id);
+			if(p!=null) p.render();
 		}
 	}
 	

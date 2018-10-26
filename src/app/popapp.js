@@ -2,12 +2,15 @@
 
 class PopApp{
 	
-    constructor(id, onLoad){
+    	constructor(id, onLoad){
 		
 		this.loaded = 0;
 		this.id = id;
 		this.onLoad = onLoad != null ? onLoad : [];
 		this.poppins = [];
+
+		var appElm = document.querySelector('app#'+this.id);
+		if(appElm) appElm.style.display = 'none';
 		
 		Pop.apps.push(this);
 		
@@ -27,7 +30,7 @@ class PopApp{
 		[].forEach.call(poppese, function(p) {
 			p.remove();
 		});
-				
+		
 		for( var i in this.onLoad ){
 			this.loadPop(this.onLoad[i]);
 		}
@@ -37,7 +40,8 @@ class PopApp{
 		if(this.loaded < 100){
 			this.onLoad.push(id);
 		}else{
-			this.getPoppin(id).render();
+			var p = this.getPoppin(id);
+			if(p!=null) p.render();
 		}
 	}
 	

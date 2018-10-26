@@ -24,10 +24,18 @@ class Poppin{
 			
 		}else{
 			
-			console.log('Poppin without options ' + this.id + '... Nothing to do!');
+			Log.debug('POPPIN', 'Poppin without options ' + this.id + '... Nothing to do!');
 			return;
 			
 		}
+
+		if(typeof this.app == 'string'){
+			this.app = Pop.getApp(this.app);
+		}else{
+			this.app = Pop.getApp();
+		}
+
+		this.app.addPoppin(this);
 		
 		if( Pop.load ){
 			this.load();
@@ -40,47 +48,47 @@ class Poppin{
 	
 	load(){
 		
-		if(typeof this.app == 'string'){
-			this.app = Pop.getApp(this.app);
-		}else{
-			this.app = Pop.getApp();
-		}
-		
 		if(this.data === undefined)
 			this.data = {};
 		
 		DataObserver.data_parser(this.data);
 		
-		console.log('Poppin ', this.id, 'loaded', this)
-		
-		this.app.addPoppin(this);
+		Log.debug('POPPIN', 'Poppin "' + this.id + '" loaded', this);
 		
 	}
 	
-	render(elm, data_ref){
+	render(elem_cursor, data_ref){
 		
-		if(elm == null){
-			elm = document.createElement('pop');
-			elm.setAttribute('id', this.id);
-			this.app.e.appendChild(elm);
+		//se non viene passato l'elemento cursore lo creo
+		if(elem_cursor == null){
+			elem_cursor = document.createElement('pop');
+			elem_cursor.setAttribute('id', this.id);
+			this.app.e.appendChild(elem_cursor);
 		}
 		
-		console.log('render ', this.id, 'into', elm, 'with data', data_ref);
-		
+		// Se non passati i dati ci appiccico quelli del pop
 		if(data_ref == null){
 			data_ref = this.data;
 		}
-		
+
+		Log.debug('POPPIN', '### rendering Pop ' , this.id);
+		Log.debug('POPPIN', 'Parent', parent);
+		Log.debug('POPPIN', 'Data', data_ref);
+
 		var html = ParserHTML.html_by_template(this.template, data_ref);
 		
 		var tmpElm = document.createElement('div');
 		tmpElm.innerHTML = html;
+		Log.debug('POPPIN', 'Tmpl elem', tmpElm);
 		var node = tmpElm.firstChild;
+		if(node == null) return;
 		node.poppin = this;
 		node.pop_data = data_ref;
-		elm.parentElement.insertBefore(node, elm.nextSibling);
-		elm.innerHTML = '';
-		
+		Log.debug('POPPIN', 'Node', node);
+
+		elem_cursor.parentElement.insertBefore(node, elem_cursor.nextSibling);
+		elem_cursor.remove();
+
 		this.binder(node, data_ref);
 		
 		data_ref._addPoppin(this, node);
@@ -166,20 +174,34 @@ class Poppin{
 		for(var i=0; i< elms.length; i++){
 			
 			var id = elms[i].getAttribute('id');
-			var pop_data = elms[i].getAttribute('pop-data') != null ? elms[i].getAttribute('pop-data') : '';
-			var dt = Pop.getDataByString(pop_data, data_ref);
-			
+
 			var p = this.app.getPoppin(id);
+			var pop_data = elms[i].getAttribute('pop-data') != null ? elms[i].getAttribute('pop-data') : null;
+
+			if(p == null) continue;
 			
-			if( Array.isArray(dt) ){
-				dt._addPoppin(p, elms[i]);
-				
-				for(var l = 0; l < dt.length; l++){
-					p.render(elms[i], dt[l]);
+			var dt = p.data;
+			if(pop_data != null)
+				dt = Pop.getDataByString(pop_data, data_ref);
+
+			Log.debug('POPPIN', 'go sub render', id, dt, pop_data)
+
+			if(p != null){
+				if( Array.isArray(dt) ){
+					
+					dt._addPoppin(p, elms[i].parentElement);
+					
+					for(var l = 0; l < dt.length; l++){
+						var elm_cursor = elms[i];
+						if(l < dt.length-1){
+							elm_cursor = elms[i].cloneNode(true);
+							elms[i].parentElement.appendChild(elm_cursor);
+						}
+						p.render(elm_cursor, dt[l]);
+					}
+				}else{
+					p.render(elms[i], dt);
 				}
-				
-			}else{
-				p.render(elms[i], dt);
 			}
 			
 		}
